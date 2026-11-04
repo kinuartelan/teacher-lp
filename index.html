@@ -217,17 +217,18 @@
   </div>
 
   <script>
-    const CONFIG = {
-      firebase: {
-        apiKey: "AIzaSyDWXRGUViHaIBXwcLRK10HyVeJLFb05YfQ",
-        authDomain: "school-lesson-plan-porta-c8ff2.firebaseapp.com",
-        projectId: "school-lesson-plan-porta-c8ff2",
-        storageBucket: "school-lesson-plan-porta-c8ff2.firebasestorage.app",
-        messagingSenderId: "15751107458",
-        appId: "1:15751107458:web:73f6a5a40777947d7d759b"
-      },
-      driveFolderId: "1GjvBq1MVRfP7NgGjxW73xDifh4rLC9sm"
-    };
+const SYSTEM_CONFIG = {
+  firebase: {
+    apiKey: "AIzaSyDWXRGUViHaIBXwcLR10HyVeJLFbO5YfQ",
+    authDomain: "school-lesson-plan-porta-c8ff2.firebaseapp.com",
+    projectId: "school-lesson-plan-porta-c8ff2",
+    storageBucket: "school-lesson-plan-porta-c8ff2.firebasestorage.app",
+    messagingSenderId: "15751107458",
+    appId: "1:15751107458:web:73f6a5a40777947d7d759b"
+  },
+  vapidKey: "BImLCvphJWxUKeSxtGuf9YrcDJPRFRg8cr-jxjkIVHcFTeFhKx2c5ReQ6hibccb8KwIWkWCFwlTF6QRDZxUOPYM",
+  driveFolderId: "1GjvBq1MVRfP7NgGjxW73xDifh4rLC9sm"
+};
 
     firebase.initializeApp(CONFIG.firebase);
     const auth = firebase.auth();
