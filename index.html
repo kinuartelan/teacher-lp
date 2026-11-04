@@ -254,7 +254,7 @@
 
     const auth = firebase.auth();
     const db = firebase.firestore();
-    const googleProvider = new firebase.auth.GoogleAuthProvider();
+  
 
     const secondaryApp = firebase.initializeApp(SYSTEM_CONFIG.firebase, "Secondary");
     const secondaryAuth = secondaryApp.auth();
@@ -266,18 +266,6 @@
     const loginPassword = document.getElementById('loginPassword');
     const passwordField = document.getElementById('passwordField');
     const loginButton = document.getElementById('loginButton');
-
-    loginUsername.addEventListener('input', () => {
-      const isAdmin = loginUsername.value.trim().toLowerCase() === 'admin';
-
-      passwordField.classList.toggle('hidden', isAdmin);
-      loginPassword.required = !isAdmin;
-      loginPassword.value = '';
-
-      loginButton.innerHTML = isAdmin
-        ? '<i class="fa-brands fa-google mr-2"></i> Sign In as Admin'
-        : 'Sign In';
-    });
 
     function updateTimers() {
       const now = new Date();
@@ -325,41 +313,35 @@
       e.preventDefault();
 
       const username = loginUsername.value.trim();
+      const password = loginPassword.value;
+
       loginButton.disabled = true;
       loginButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Signing In';
 
       try {
-        if (username.toLowerCase() === 'admin') {
-          const result = await auth.signInWithPopup(googleProvider);
-          currentUser = result.user;
-
-          if (currentUser.uid !== SYSTEM_CONFIG.adminUid) {
-            await auth.signOut();
-            currentUser = null;
-            throw new Error("This Google account is not authorized as the portal administrator.");
-          }
-
-          await checkUserRole(currentUser);
-        } else {
-          const password = loginPassword.value;
-
-          if (!password) {
-            throw new Error("Enter your assigned password.");
-          }
-
-          const result = await auth.signInWithEmailAndPassword(username, password);
-          currentUser = result.user;
-          await checkUserRole(currentUser);
+        if (!username) {
+          throw new Error("Enter your username.");
         }
+
+        if (!password) {
+          throw new Error("Enter your password.");
+        }
+
+        const email = username.toLowerCase() === 'admin'
+          ? 'kinuartelansupply@gmail.com'
+          : username;
+
+        const result = await auth.signInWithEmailAndPassword(email, password);
+        currentUser = result.user;
+        await checkUserRole(currentUser);
       } catch (err) {
         alert("Login failed: " + (err.message || err));
       } finally {
         loginButton.disabled = false;
-        loginButton.innerHTML = loginUsername.value.trim().toLowerCase() === 'admin'
-          ? '<i class="fa-brands fa-google mr-2"></i> Sign In as Admin'
-          : 'Sign In';
+        loginButton.textContent = 'Sign In';
       }
     });
+
 
     async function checkUserRole(user) {
       const doc = await db.collection('users').doc(user.uid).get();
