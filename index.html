@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kinuartelan School Portal - Lesson Plan & Reflection Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+
+  <!-- App Header -->
+  <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-600/30">
+        <i class="fa-solid fa-school text-xl"></i>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold tracking-tight text-white">Kinuartelan School Portal</h1>
+        <p class="text-xs text-slate-400">Official Weekly Lesson Plan & Reflection System</p>
+      </div>
+    </div>
+    <div id="headerUserNav" class="flex items-center gap-4">
+      <!-- Dynamically populated user session info -->
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-4 md:p-8">
+    <!-- Login Screen -->
+    <div id="loginView" class="max-w-md mx-auto my-16 bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-bold text-white">Portal Sign In</h2>
+        <p class="text-xs text-slate-400 mt-1">Enter your assigned school username</p>
+      </div>
+      
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Username / ID</label>
+          <input type="text" id="loginUsername" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm" placeholder="e.g. admin or teacher1">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Password</label>
+          <input type="password" id="loginPassword" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm" placeholder="••••••••">
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/20 text-sm">
+          Access Portal
+        </button>
+      </form>
+    </div>
+
+    <!-- Teacher Dashboard View -->
+    <div id="teacherDashboard" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl md:col-span-2 flex flex-col justify-between">
+          <div>
+            <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Teacher Workspace</span>
+            <h2 id="teacherWelcomeName" class="text-2xl font-bold mt-1 text-white">Welcome</h2>
+            <p class="text-xs text-slate-400 mt-1">Upload files securely to the central Google Drive repository.</p>
+          </div>
+          <div class="mt-6 flex flex-wrap gap-2 text-xs">
+            <span class="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-300">
+              <i class="fa-regular fa-clock text-indigo-400 mr-1.5"></i> Weekly Schedule Reset: Mon 12:00 AM
+            </span>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between">
+          <div>
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Deadlines</span>
+            <div class="mt-4 space-y-3">
+              <div>
+                <span class="text-xs text-slate-400 block mb-1">Lesson Plan Cutoff (Mon 9:00 AM)</span>
+                <div id="lpTimerDisplay" class="text-lg font-mono font-bold text-emerald-400">--:--:--</div>
+              </div>
+              <div class="pt-2 border-t border-slate-800">
+                <span class="text-xs text-slate-400 block mb-1">Reflection Cutoff (Tue 9:05 AM)</span>
+                <div id="refTimerDisplay" class="text-lg font-mono font-bold text-amber-400">--:--:--</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload Sections -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Lesson Plan Box -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 relative">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="font-bold text-lg text-white">1. Weekly Lesson Plan</h3>
+              <p class="text-xs text-slate-400">Mon 12:00 AM – 9:00 AM (On-time)</p>
+            </div>
+            <span id="teacherLpStatus" class="px-3 py-1 text-xs font-bold rounded-full bg-slate-800 text-slate-300">NOT SUBMITTED</span>
+          </div>
+          <form id="lpUploadForm" class="space-y-4">
+            <div class="border-2 border-dashed border-slate-800 rounded-xl p-6 text-center hover:border-indigo-500/50 transition">
+              <i class="fa-solid fa-cloud-arrow-up text-3xl text-indigo-400 mb-2"></i>
+              <p class="text-xs text-slate-300 mb-2">Select Lesson Plan Document (.pdf, .doc, .docx)</p>
+              <input type="file" id="lpFile" accept=".pdf,.doc,.docx" required class="text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-indigo-600 file:text-white file:text-xs hover:file:bg-indigo-500 cursor-pointer">
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 font-semibold py-3 rounded-xl text-sm transition">
+              Upload Lesson Plan
+            </button>
+          </form>
+        </div>
+
+        <!-- Reflection Box (Locked until LP is submitted) -->
+        <div id="reflectionCardContainer" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 opacity-50 pointer-events-none relative overflow-hidden">
+          <div id="reflectionLockOverlay" class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center text-center p-6">
+            <i class="fa-solid fa-lock text-3xl text-slate-500 mb-2"></i>
+            <p class="font-bold text-sm text-white">Reflection Section Locked</p>
+            <p class="text-xs text-slate-400 mt-1">Submit your Lesson Plan first to unlock the weekly reflection upload window.</p>
+          </div>
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="font-bold text-lg text-white">2. Weekly Reflection</h3>
+              <p class="text-xs text-slate-400">Mon 9:05 AM – Tue 9:05 AM (On-time)</p>
+            </div>
+            <span id="teacherRefStatus" class="px-3 py-1 text-xs font-bold rounded-full bg-slate-800 text-slate-300">LOCKED</span>
+          </div>
+          <form id="refUploadForm" class="space-y-4">
+            <div class="border-2 border-dashed border-slate-800 rounded-xl p-6 text-center">
+              <i class="fa-solid fa-cloud-arrow-up text-3xl text-amber-400 mb-2"></i>
+              <p class="text-xs text-slate-300 mb-2">Select Reflection Document (.pdf, .doc, .docx)</p>
+              <input type="file" id="refFile" accept=".pdf,.doc,.docx" required class="text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-amber-600 file:text-slate-950 file:font-bold file:text-xs cursor-pointer">
+            </div>
+            <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 font-bold py-3 rounded-xl text-sm transition text-slate-950">
+              Upload Reflection
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Password Update -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md">
+        <h3 class="font-bold text-sm text-white mb-3">Change Account Password</h3>
+        <form id="teacherPasswordForm" class="space-y-3">
+          <input type="password" id="newTeacherPassword" placeholder="Enter new password" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-100">
+          <button type="submit" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-semibold transition">
+            Update Password
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin Dashboard View -->
+    <div id="adminDashboard" class="hidden space-y-6">
+      <!-- Statistics Metrics -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+          <span class="text-xs text-slate-400 font-medium">Total Teachers</span>
+          <div id="adminStatTotal" class="text-3xl font-bold mt-1 text-white">0</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+          <span class="text-xs text-slate-400 font-medium">On-Time Submissions</span>
+          <div id="adminStatOnTime" class="text-3xl font-bold mt-1 text-emerald-400">0</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+          <span class="text-xs text-slate-400 font-medium">Late Submissions</span>
+          <div id="adminStatLate" class="text-3xl font-bold mt-1 text-amber-400">0</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl border-l-4 border-l-indigo-500">
+          <span class="text-xs text-slate-400 font-medium">Admin Review Compliance (5:05 PM SLA)</span>
+          <div id="adminStatSLA" class="text-xl font-bold mt-1 text-indigo-400">100% On-Time</div>
+        </div>
+      </div>
+
+      <!-- Master Roster Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h3 class="font-bold text-lg text-white">Teacher Submissions & Management</h3>
+            <p class="text-xs text-slate-400">Direct folder link: <a href="https://drive.google.com/drive/folders/1GjvBq1MVRfP7NgGjxW73xDifh4rLC9sm" target="_blank" class="text-indigo-400 underline">Kinuartelan_LessonPlan</a></p>
+          </div>
+          <button id="openEnrollModalBtn" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/20">
+            <i class="fa-solid fa-plus mr-1"></i> Enroll New Teacher
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-950 text-xs uppercase text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="p-3.5">Teacher Username</th>
+                <th class="p-3.5">Lesson Plan</th>
+                <th class="p-3.5">Reflection</th>
+                <th class="p-3.5">Google Drive Folder</th>
+                <th class="p-3.5">Review Status (5:05 PM SLA)</th>
+                <th class="p-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminTeacherTableBody" class="divide-y divide-slate-800/60">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Enroll Modal -->
+  <div id="enrollModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg text-white">Enroll Teacher Account</h3>
+        <button id="closeEnrollModalBtn" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="enrollForm" class="space-y-4">
+        <div>
+          <label class="block text-xs uppercase text-slate-400 mb-1">Full Name</label>
+          <input type="text" id="enrollName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100">
+        </div>
+        <div>
+          <label class="block text-xs uppercase text-slate-400 mb-1">Username ID (e.g. teacher_juan)</label>
+          <input type="text" id="enrollUsername" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100">
+        </div>
+        <div>
+          <label class="block text-xs uppercase text-slate-400 mb-1">Temporary Password</label>
+          <input type="password" id="enrollPassword" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100">
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 font-semibold py-2.5 rounded-xl text-sm transition">
+          Register Account
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      firebase: {
+        apiKey: "AIzaSyDWXRGUViHaIBXwcLRK10HyVeJLFb05YfQ",
+        authDomain: "school-lesson-plan-porta-c8ff2.firebaseapp.com",
+        projectId: "school-lesson-plan-porta-c8ff2",
+        storageBucket: "school-lesson-plan-porta-c8ff2.firebasestorage.app",
+        messagingSenderId: "15751107458",
+        appId: "1:15751107458:web:73f6a5a40777947d7d759b"
+      },
+      driveFolderId: "1GjvBq1MVRfP7NgGjxW73xDifh4rLC9sm"
+    };
+
+    firebase.initializeApp(CONFIG.firebase);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Helper to convert username to internal email format
+    function usernameToEmail(username) {
+      return username.trim().toLowerCase() + "@kinuartelan.portal";
+    }
+
+    // Authentication State Observer
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (userDoc.exists && userDoc.data().role === 'admin') {
+          renderAdminDashboard();
+        } else {
+          renderTeacherDashboard(user);
+        }
+      } else {
+        document.getElementById('loginView').classList.remove('hidden');
+        document.getElementById('teacherDashboard').classList.add('hidden');
+        document.getElementById('adminDashboard').classList.add('hidden');
+        document.getElementById('headerUserNav').innerHTML = '';
+      }
+    });
+
+    // Login Form Handler with Username mapping
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const usernameInput = document.getElementById('loginUsername').value;
+      const pass = document.getElementById('loginPassword').value;
+      const email = usernameToEmail(usernameInput);
+
+      try {
+        await auth.signInWithEmailAndPassword(email, pass);
+      } catch (err) {
+        alert("Authentication Error: " + err.message);
+      }
+    });
+
+    // Live Timers Engine
+    function updateTimers() {
+      const now = new Date();
+      const day = now.getDay();
+      
+      const lpCutoff = new Date(now);
+      lpCutoff.setHours(9, 0, 0, 0);
+      if (day !== 1 || now > lpCutoff) {
+        const days = (8 - day) % 7 || 7;
+        lpCutoff.setDate(now.getDate() + days);
+        lpCutoff.setHours(9, 0, 0, 0);
+      }
+
+      const refCutoff = new Date(now);
+      refCutoff.setHours(9, 5, 0, 0);
+      if (day > 2 || (day === 2 && now > refCutoff)) {
+        const days = (9 - day) % 7 || 7;
+        refCutoff.setDate(now.getDate() + days);
+        refCutoff.setHours(9, 5, 0, 0);
+      }
+
+      document.getElementById('lpTimerDisplay').textContent = formatTime(lpCutoff - now);
+      document.getElementById('refTimerDisplay').textContent = formatTime(refCutoff - now);
+    }
+
+    function formatTime(ms) {
+      if (ms <= 0) return "WINDOW CLOSED";
+      const h = Math.floor(ms / (1000 * 60 * 60));
+      const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((ms % (1000 * 60)) / 1000);
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    setInterval(updateTimers, 1000);
+    updateTimers();
+
+    function renderTeacherDashboard(user) {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('adminDashboard').classList.add('hidden');
+      document.getElementById('teacherDashboard').classList.remove('hidden');
+      
+      document.getElementById('headerUserNav').innerHTML = `
+        <button onclick="auth.signOut()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-2 rounded-xl font-semibold transition">Sign Out</button>
+      `;
+
+      db.collection('submissions').doc(user.uid).onSnapshot(doc => {
+        if (doc.exists) {
+          const data = doc.data();
+          if (data.lessonPlan) {
+            document.getElementById('teacherLpStatus').textContent = data.lessonPlan.status;
+            document.getElementById('teacherLpStatus').className = `px-3 py-1 text-xs font-bold rounded-full ${data.lessonPlan.status === 'SUBMITTED' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`;
+            
+            document.getElementById('reflectionCardContainer').classList.remove('opacity-50', 'pointer-events-none');
+            document.getElementById('reflectionLockOverlay').classList.add('hidden');
+          }
+          if (data.reflection) {
+            document.getElementById('teacherRefStatus').textContent = data.reflection.status;
+            document.getElementById('teacherRefStatus').className = `px-3 py-1 text-xs font-bold rounded-full ${data.reflection.status === 'SUBMITTED' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`;
+          }
+        }
+      });
+    }
+
+    function renderAdminDashboard() {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('teacherDashboard').classList.add('hidden');
+      document.getElementById('adminDashboard').classList.remove('hidden');
+
+      document.getElementById('headerUserNav').innerHTML = `
+        <span class="text-xs bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 px-3 py-1.5 rounded-xl font-semibold">Administrator</span>
+        <button onclick="auth.signOut()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-2 rounded-xl font-semibold transition">Sign Out</button>
+      `;
+
+      db.collection('users').where('role', '==', 'teacher').onSnapshot(snapshot => {
+        document.getElementById('adminStatTotal').textContent = snapshot.size;
+        const tbody = document.getElementById('adminTeacherTableBody');
+        tbody.innerHTML = '';
+
+        snapshot.forEach(docSnap => {
+          const t = docSnap.data();
+          tbody.innerHTML += `
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="p-3.5 font-medium text-white">${t.name} <span class="text-xs text-slate-500 block">(${t.username})</span></td>
+              <td class="p-3.5"><span class="px-2.5 py-1 bg-slate-800 rounded-lg text-xs text-slate-300">Pending</span></td>
+              <td class="p-3.5"><span class="px-2.5 py-1 bg-slate-800 rounded-lg text-xs text-slate-300">Locked</span></td>
+              <td class="p-3.5"><a href="https://drive.google.com/drive/folders/1GjvBq1MVRfP7NgGjxW73xDifh4rLC9sm" target="_blank" class="text-indigo-400 hover:underline text-xs"><i class="fa-solid fa-folder-open mr-1.5"></i> Open Drive Folder</a></td>
+              <td class="p-3.5 text-xs text-slate-400">Not Viewed</td>
+              <td class="p-3.5 text-right">
+                <button onclick="deleteTeacher('${docSnap.id}')" class="text-red-400 hover:text-red-300 text-xs px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+    }
+
+    // Modal Control
+    document.getElementById('openEnrollModalBtn').addEventListener('click', () => document.getElementById('enrollModal').classList.remove('hidden'));
+    document.getElementById('closeEnrollModalBtn').addEventListener('click', () => document.getElementById('enrollModal').classList.add('hidden'));
+
+    // Enroll Teacher Handler
+    document.getElementById('enrollForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('enrollName').value;
+      const username = document.getElementById('enrollUsername').value.trim();
+      const pass = document.getElementById('enrollPassword').value;
+      const email = usernameToEmail(username);
+
+      try {
+        const res = await auth.createUserWithEmailAndPassword(email, pass);
+        await db.collection('users').doc(res.user.uid).set({
+          name: name,
+          username: username,
+          email: email,
+          role: 'teacher',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById('enrollModal').classList.add('hidden');
+        alert("Teacher account registered successfully!");
+      } catch (err) {
+        alert("Enrollment failed: " + err.message);
+      }
+    });
+
+    async function deleteTeacher(uid) {
+      if (confirm("Are you sure you want to delete this teacher account permanently?")) {
+        await db.collection('users').doc(uid).delete();
+      }
+    }
+  </script>
+</body>
+</html>
