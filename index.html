@@ -49,6 +49,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
@@ -65,31 +66,13 @@
                 </div>
             </div>
 
-            <!-- Current Role & Quick Test Switcher -->
+            <!-- Current Account -->
             <div class="flex items-center space-x-4">
                 <div id="authUserInfo" class="hidden sm:flex items-center space-x-2 text-sm bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
                     <span id="userNameDisplay" class="font-medium text-slate-200">Loading...</span>
                     <span id="userRoleBadge" class="text-xs px-2 py-0.5 rounded-full bg-sky-900 text-sky-300 font-semibold uppercase">User</span>
                 </div>
-
-                <div class="relative inline-block text-left" id="demoRoleSection">
-                    <button id="roleSwitchBtn" onclick="toggleRoleDropdown()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 flex items-center space-x-1 transition">
-                        <i class="fa-solid fa-arrows-rotate text-sky-400"></i>
-                        <span>Switch Demo View</span>
-                        <i class="fa-solid fa-chevron-down text-xs ml-1"></i>
-                    </button>
-                    <div id="roleDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200 py-1 z-50">
-                        <div class="px-3 py-1.5 text-xs text-slate-400 font-semibold border-b border-slate-100">QUICK ROLE SWITCH</div>
-                        <button onclick="switchDemoUser('admin')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 flex items-center justify-between">
-                            <span><i class="fa-solid fa-user-shield text-indigo-600 mr-2"></i> Principal / Admin</span>
-                        </button>
-                        <button onclick="switchDemoUser('teacher')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 flex items-center justify-between">
-                            <span><i class="fa-solid fa-chalkboard-user text-emerald-600 mr-2"></i> Teacher View</span>
-                        </button>
-                    </div>
-                </div>
-
                 <button id="logoutBtn" onclick="handleLogout()" class="hidden text-slate-400 hover:text-rose-400 text-sm font-medium transition">
                     <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
                 </button>
@@ -130,18 +113,6 @@
                         Sign In to Portal
                     </button>
                 </form>
-
-                <div class="mt-6 pt-6 border-t border-slate-100 text-center">
-                    <p class="text-xs text-slate-400 mb-2">First time here or testing without credentials?</p>
-                    <div class="flex justify-center space-x-2">
-                        <button onclick="switchDemoUser('teacher')" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition">
-                            Login as Teacher
-                        </button>
-                        <button onclick="switchDemoUser('admin')" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition">
-                            Login as Admin
-                        </button>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -194,7 +165,7 @@
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200">
                     <div>
                         <h2 class="text-lg font-bold text-slate-900">Weekly Upload Terminal</h2>
-                        <p class="text-xs text-slate-500">Upload your Google Drive document links or files for this week.</p>
+                        <p class="text-xs text-slate-500">Upload your lesson plan and reflection files for this week.</p>
                     </div>
                     <div>
                         <button onclick="openPasswordModal()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center transition">
@@ -215,7 +186,7 @@
                                 </div>
                                 <div>
                                     <h3 class="font-bold text-slate-800">Weekly Lesson Plan</h3>
-                                    <p class="text-xs text-slate-500">PDF, DOC, DOCX via Google Drive</p>
+                                    <p class="text-xs text-slate-500">PDF, DOC, DOCX files</p>
                                 </div>
                             </div>
                             <span id="lpTeacherStatusPill" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
@@ -233,13 +204,9 @@
 
                             <!-- Upload Form / Current Details -->
                             <div id="lpUploadContainer">
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Google Drive Sharing Link / File URL</label>
-                                <div class="flex gap-2 mb-3">
-                                    <input type="url" id="lpUrlInput" placeholder="https://drive.google.com/file/d/..." class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
-                                    <button onclick="generateMockDriveLink('lp')" type="button" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs rounded-lg font-medium whitespace-nowrap" title="Auto fill demo link">
-                                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Demo Link
-                                    </button>
-                                </div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Select Lesson Plan File</label>
+                                <input type="file" id="lpFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none mb-3">
+                                <p class="text-xs text-slate-400 mb-3" id="lpSelectedFile">No file selected. Maximum file size: 10 MB.</p>
                                 <button id="submitLpBtn" onclick="submitFile('lessonPlan')" class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-semibold text-sm shadow transition">
                                     Submit Lesson Plan
                                 </button>
@@ -248,8 +215,8 @@
                             <!-- Submission Receipt Info -->
                             <div id="lpReceiptCard" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2">
                                 <div class="flex justify-between items-center text-slate-600">
-                                    <span>Submitted Link:</span>
-                                    <a id="lpReceiptLink" href="#" target="_blank" class="text-sky-600 font-semibold underline truncate max-w-[180px]">View Document</a>
+                                    <span>Submitted File:</span>
+                                    <a id="lpReceiptLink" href="#" target="_blank" class="text-sky-600 font-semibold underline truncate max-w-[180px]">View File</a>
                                 </div>
                                 <div class="flex justify-between text-slate-500">
                                     <span>Timestamp:</span>
@@ -293,13 +260,9 @@
 
                             <!-- Upload Form / Current Details -->
                             <div id="refUploadContainer" class="pointer-events-none">
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Google Drive Sharing Link / File URL</label>
-                                <div class="flex gap-2 mb-3">
-                                    <input type="url" id="refUrlInput" disabled placeholder="Unlock by submitting Lesson Plan first" class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none bg-slate-100">
-                                    <button id="refDemoBtn" disabled onclick="generateMockDriveLink('ref')" type="button" class="px-3 py-2 bg-slate-100 text-slate-400 text-xs rounded-lg font-medium whitespace-nowrap">
-                                        Demo Link
-                                    </button>
-                                </div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Select Reflection File</label>
+                                <input type="file" id="refFileInput" disabled accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none bg-slate-100 mb-3">
+                                <p class="text-xs text-slate-400 mb-3" id="refSelectedFile">Unlock by submitting Lesson Plan first. Maximum file size: 10 MB.</p>
                                 <button id="submitRefBtn" disabled onclick="submitFile('reflection')" class="w-full py-2.5 bg-purple-600 text-white rounded-lg font-semibold text-sm shadow opacity-50 cursor-not-allowed">
                                     Submit Reflection
                                 </button>
@@ -308,8 +271,8 @@
                             <!-- Submission Receipt Info -->
                             <div id="refReceiptCard" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2">
                                 <div class="flex justify-between items-center text-slate-600">
-                                    <span>Submitted Link:</span>
-                                    <a id="refReceiptLink" href="#" target="_blank" class="text-purple-600 font-semibold underline truncate max-w-[180px]">View Document</a>
+                                    <span>Submitted File:</span>
+                                    <a id="refReceiptLink" href="#" target="_blank" class="text-purple-600 font-semibold underline truncate max-w-[180px]">View File</a>
                                 </div>
                                 <div class="flex justify-between text-slate-500">
                                     <span>Timestamp:</span>
@@ -580,6 +543,7 @@
         const app = firebase.initializeApp(SYSTEM_CONFIG.firebase);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        const storage = firebase.storage();
         const secondaryApp = firebase.initializeApp(SYSTEM_CONFIG.firebase, "TeacherEnrollment");
         const secondaryAuth = secondaryApp.auth();
 
@@ -706,10 +670,6 @@
             }
         }
 
-        function switchDemoUser(role) {
-            document.getElementById('roleDropdown').classList.add('hidden');
-            showToast("Sign in using your assigned username and password.", "info");
-        }
 
         async function checkUserRole(user) {
             try {
@@ -781,9 +741,6 @@
             }
         }
 
-        function toggleRoleDropdown() {
-            document.getElementById('roleDropdown').classList.toggle('hidden');
-        }
 
         async function loadTeacherSubmissions(uid) {
             const snap = await db.collection('submissions').doc(uid).get();
@@ -832,6 +789,7 @@
                 lpUploadContainer.classList.add('hidden');
                 lpReceipt.classList.remove('hidden');
                 document.getElementById('lpReceiptLink').href = lp.fileUrl;
+                document.getElementById('lpReceiptLink').innerText = lp.fileName || 'View File';
                 document.getElementById('lpReceiptTime').innerText = new Date(lp.timestamp).toLocaleString();
 
                 const lpAdminAudit = document.getElementById('lpAdminAudit');
@@ -853,26 +811,23 @@
             const refPill = document.getElementById('refTeacherStatusPill');
             const refReceipt = document.getElementById('refReceiptCard');
             const refUploadContainer = document.getElementById('refUploadContainer');
-            const refUrlInput = document.getElementById('refUrlInput');
+            const refFileInput = document.getElementById('refFileInput');
             const submitRefBtn = document.getElementById('submitRefBtn');
-            const refDemoBtn = document.getElementById('refDemoBtn');
 
             if (!lp) {
                 refCard.classList.add('opacity-60');
                 refPill.innerText = "LOCKED";
                 refPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500";
                 refUploadContainer.classList.add('pointer-events-none');
-                refUrlInput.disabled = true;
+                refFileInput.disabled = true;
                 submitRefBtn.disabled = true;
-                refDemoBtn.disabled = true;
                 refReceipt.classList.add('hidden');
             } else {
                 refCard.classList.remove('opacity-60');
                 refUploadContainer.classList.remove('pointer-events-none');
-                refUrlInput.disabled = false;
+                refFileInput.disabled = false;
                 submitRefBtn.disabled = false;
                 submitRefBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                refDemoBtn.disabled = false;
 
                 if (ref) {
                     refPill.innerText = ref.status;
@@ -882,6 +837,7 @@
                     refUploadContainer.classList.add('hidden');
                     refReceipt.classList.remove('hidden');
                     document.getElementById('refReceiptLink').href = ref.fileUrl;
+                    document.getElementById('refReceiptLink').innerText = ref.fileName || 'View File';
                     document.getElementById('refReceiptTime').innerText = new Date(ref.timestamp).toLocaleString();
 
                     const refAdminAudit = document.getElementById('refAdminAudit');
@@ -901,46 +857,73 @@
             }
         }
 
-        function generateMockDriveLink(type) {
-            const docType = type === 'lp' ? 'Lesson_Plan' : 'Reflection';
-            const randomId = Math.random().toString(36).substring(2, 10);
-            const mockUrl = `https://drive.google.com/file/d/1${randomId}_${docType}/view?usp=sharing`;
-            if (type === 'lp') {
-                document.getElementById('lpUrlInput').value = mockUrl;
-            } else {
-                document.getElementById('refUrlInput').value = mockUrl;
+        function getWeekStorageKey() {
+            const now = new Date();
+            const monday = new Date(now);
+            const diffToMon = (now.getDay() === 0 ? -6 : 1 - now.getDay());
+            monday.setDate(now.getDate() + diffToMon);
+            monday.setHours(0, 0, 0, 0);
+            return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+        }
+
+        function validateSelectedFile(file) {
+            if (!file) {
+                showToast("Please select a file to upload.", "error");
+                return false;
             }
-            showToast("Google Drive link auto-filled!", "info");
+            const extension = file.name.split('.').pop().toLowerCase();
+            if (!['pdf', 'doc', 'docx'].includes(extension)) {
+                showToast("Only PDF, DOC, and DOCX files are allowed.", "error");
+                return false;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                showToast("The selected file exceeds the 10 MB limit.", "error");
+                return false;
+            }
+            return true;
         }
 
         async function submitFile(type) {
             if (!currentUser || currentUser.role !== "teacher") return;
             const isLP = type === 'lessonPlan';
-            const inputEl = isLP ? document.getElementById('lpUrlInput') : document.getElementById('refUrlInput');
-            const fileUrl = inputEl.value.trim();
+            const inputEl = document.getElementById(isLP ? 'lpFileInput' : 'refFileInput');
+            const selectedFile = inputEl.files && inputEl.files[0];
 
-            if (!fileUrl) {
-                showToast("Please enter a valid document link", "error");
-                return;
-            }
+            if (!validateSelectedFile(selectedFile)) return;
 
-            if (!/^https:\/\/(drive\.google\.com|docs\.google\.com)\//i.test(fileUrl)) {
-                showToast("Please enter a valid Google Drive sharing link.", "error");
-                return;
-            }
-
-            const { now, lpOnTimeEnd, refOnTimeEnd } = getWeeklyTimestamps();
-            const status = isLP ? (now > lpOnTimeEnd ? 'LATE' : 'SUBMITTED') : (now > refOnTimeEnd ? 'LATE' : 'SUBMITTED');
-            const submission = {
-                fileUrl,
-                status,
-                timestamp: new Date().toISOString(),
-                adminReviewed: false,
-                adminReviewTime: null,
-                adminSlaStatus: null
-            };
+            const submitButton = document.getElementById(isLP ? 'submitLpBtn' : 'submitRefBtn');
+            const originalButtonText = submitButton.innerText;
+            submitButton.disabled = true;
+            submitButton.innerText = "Uploading...";
 
             try {
+                const safeFileName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const storagePath = `teacher-submissions/${currentUser.uid}/${getWeekStorageKey()}/${type}/${Date.now()}_${safeFileName}`;
+                const fileRef = storage.ref().child(storagePath);
+                const uploadTask = await fileRef.put(selectedFile, {
+                    contentType: selectedFile.type || 'application/octet-stream',
+                    customMetadata: {
+                        teacherUid: currentUser.uid,
+                        teacherName: currentUser.name,
+                        submissionType: type
+                    }
+                });
+                const fileUrl = await uploadTask.ref.getDownloadURL();
+                const { now, lpOnTimeEnd, refOnTimeEnd } = getWeeklyTimestamps();
+                const status = isLP ? (now > lpOnTimeEnd ? 'LATE' : 'SUBMITTED') : (now > refOnTimeEnd ? 'LATE' : 'SUBMITTED');
+                const submission = {
+                    fileUrl,
+                    storagePath,
+                    fileName: selectedFile.name,
+                    fileSize: selectedFile.size,
+                    fileType: selectedFile.type || '',
+                    status,
+                    timestamp: new Date().toISOString(),
+                    adminReviewed: false,
+                    adminReviewTime: null,
+                    adminSlaStatus: null
+                };
+
                 await db.collection('submissions').doc(currentUser.uid).set({
                     uid: currentUser.uid,
                     teacherName: currentUser.name,
@@ -951,12 +934,29 @@
                 if (!weeklySubmissions[currentUser.id]) weeklySubmissions[currentUser.id] = {};
                 weeklySubmissions[currentUser.id][type] = submission;
                 inputEl.value = "";
+                const selectedLabel = document.getElementById(isLP ? 'lpSelectedFile' : 'refSelectedFile');
+                selectedLabel.innerText = "No file selected. Maximum file size: 10 MB.";
                 renderTeacherDashboard();
                 showToast(`${isLP ? 'Lesson Plan' : 'Reflection'} uploaded successfully! Status: ${status}`, "success");
             } catch (error) {
-                showToast("Submission failed: " + error.message, "error");
+                console.error(error);
+                showToast("File upload failed: " + error.message, "error");
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerText = originalButtonText;
             }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const lpInput = document.getElementById('lpFileInput');
+            const refInput = document.getElementById('refFileInput');
+            if (lpInput) lpInput.addEventListener('change', () => {
+                document.getElementById('lpSelectedFile').innerText = lpInput.files[0] ? `${lpInput.files[0].name} (${(lpInput.files[0].size / 1024 / 1024).toFixed(2)} MB)` : "No file selected. Maximum file size: 10 MB.";
+            });
+            if (refInput) refInput.addEventListener('change', () => {
+                document.getElementById('refSelectedFile').innerText = refInput.files[0] ? `${refInput.files[0].name} (${(refInput.files[0].size / 1024 / 1024).toFixed(2)} MB)` : "No file selected. Maximum file size: 10 MB.";
+            });
+        });
 
         function switchAdminTab(tab) {
             ['Overview', 'Teachers', 'Performance'].forEach(t => {
