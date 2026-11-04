@@ -49,7 +49,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
@@ -537,13 +536,13 @@
             },
             adminEmail: "kinuartelansupply@gmail.com",
             adminUid: "LqtM4Hz1nRVkCcrq9GcWak5BNyU2",
-            teacherEmailDomain: "school-lesson-plan-porta-c8ff2.firebaseapp.com"
+            teacherEmailDomain: "school-lesson-plan-porta-c8ff2.firebaseapp.com",
+            driveUploadUrl: "https://script.google.com/macros/s/AKfycbwOSva0262ng382ZcWuPih41jongCfV-UORlUDAhoAmnssXFmeEpnAIXol2KaQ1Zv6n/exec"
         };
 
         const app = firebase.initializeApp(SYSTEM_CONFIG.firebase);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const storage = firebase.storage();
         const secondaryApp = firebase.initializeApp(SYSTEM_CONFIG.firebase, "TeacherEnrollment");
         const secondaryAuth = secondaryApp.auth();
 
@@ -897,24 +896,46 @@
             submitButton.innerText = "Uploading...";
 
             try {
-                const safeFileName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-                const storagePath = `teacher-submissions/${currentUser.uid}/${getWeekStorageKey()}/${type}/${Date.now()}_${safeFileName}`;
-                const fileRef = storage.ref().child(storagePath);
-                const uploadTask = await fileRef.put(selectedFile, {
-                    contentType: selectedFile.type || 'application/octet-stream',
-                    customMetadata: {
-                        teacherUid: currentUser.uid,
-                        teacherName: currentUser.name,
-                        submissionType: type
-                    }
+                const mimeTypes = {
+                    pdf: 'application/pdf',
+                    doc: 'application/msword',
+                    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                };
+                const extension = selectedFile.name.split('.').pop().toLowerCase();
+                const mimeType = mimeTypes[extension];
+                const fileData = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(String(reader.result).split(',')[1]);
+                    reader.onerror = () => reject(new Error('Unable to read the selected file.'));
+                    reader.readAsDataURL(selectedFile);
                 });
-                const fileUrl = await uploadTask.ref.getDownloadURL();
+                const driveResponse = await fetch(SYSTEM_CONFIG.driveUploadUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        fileName: selectedFile.name,
+                        fileData,
+                        mimeType,
+                        username: currentUser.username,
+                        teacherName: currentUser.name,
+                        submissionType: type,
+                        week: getWeekStorageKey()
+                    })
+                });
+                if (!driveResponse.ok) {
+                    throw new Error(`Google Drive upload request failed (${driveResponse.status}).`);
+                }
+                const driveResult = await driveResponse.json();
+                if (!driveResult.success || !driveResult.fileUrl) {
+                    throw new Error(driveResult.error || 'Google Drive did not confirm the upload.');
+                }
+                const fileUrl = driveResult.fileUrl;
                 const { now, lpOnTimeEnd, refOnTimeEnd } = getWeeklyTimestamps();
                 const status = isLP ? (now > lpOnTimeEnd ? 'LATE' : 'SUBMITTED') : (now > refOnTimeEnd ? 'LATE' : 'SUBMITTED');
                 const submission = {
                     fileUrl,
-                    storagePath,
-                    fileName: selectedFile.name,
+                    fileId: driveResult.fileId,
+                    fileName: driveResult.fileName || selectedFile.name,
                     fileSize: selectedFile.size,
                     fileType: selectedFile.type || '',
                     status,
