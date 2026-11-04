@@ -1,614 +1,1338 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kinuartelan School Portal - Lesson Plan & Reflection</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPlan Hub - Lesson Plan & Reflection System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .pulse-subtle {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.75; }
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
-  <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-    <div class="flex items-center gap-3">
-      <div class="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/30">
-        <i class="fa-solid fa-graduation-cap text-xl"></i>
-      </div>
-      <div>
-        <h1 class="text-xl font-bold tracking-tight text-white">Kinuartelan School Portal</h1>
-        <p class="text-xs text-slate-400">Lesson Plan & Reflection Management System</p>
-      </div>
-    </div>
-    <div id="authHeaderState" class="flex items-center gap-4"></div>
-  </header>
-
-  <main class="max-w-7xl mx-auto p-4 md:p-6">
-    <div id="loginView" class="max-w-md mx-auto my-12 bg-slate-800 border border-slate-700 rounded-2xl p-8 shadow-2xl">
-      <h2 class="text-2xl font-bold text-center mb-2">Portal Login</h2>
-      <p class="text-sm text-slate-400 text-center mb-6">Sign in with your assigned school credentials</p>
-
-      <form id="loginForm" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Username</label>
-          <input type="text" id="loginUsername" required autocomplete="username" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="admin">
-        </div>
-        <div id="passwordField">
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Password</label>
-          <input type="password" id="loginPassword" autocomplete="current-password" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="••••••••">
-        </div>
-        <button type="submit" id="loginButton" class="w-full bg-indigo-600 hover:bg-indigo-500 font-semibold py-2.5 rounded-lg transition shadow-lg shadow-indigo-600/30">
-          Sign In
-        </button>
-      </form>
-    </div>
-
-    <div id="teacherDashboard" class="hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl md:col-span-2 flex flex-col justify-between">
-          <div>
-            <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Teacher Workspace</span>
-            <h2 id="teacherWelcome" class="text-2xl font-bold mt-1">Welcome Back</h2>
-            <p class="text-xs text-slate-400 mt-1">Weekly submissions lock according to strict schedule deadlines.</p>
-          </div>
-          <div class="mt-4 flex gap-3 text-xs">
-            <span class="px-3 py-1 bg-slate-900 border border-slate-700 rounded-full text-slate-300">
-              <i class="fa-regular fa-clock text-indigo-400 mr-1.5"></i> Resets every Mon 12:00 AM
-            </span>
-          </div>
-        </div>
-
-        <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl flex flex-col justify-between">
-          <div>
-            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Window Deadlines</span>
-            <div class="mt-3 space-y-2">
-              <div>
-                <div class="flex justify-between text-xs mb-1">
-                  <span class="text-slate-300">Lesson Plan Cutoff (Mon 9:00 AM)</span>
+    <!-- Top Navigation Bar -->
+    <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-sky-500 p-2 rounded-lg text-white">
+                    <i class="fa-solid me-1 fa-book-bookmark text-xl"></i>
                 </div>
-                <div id="lpCountdown" class="text-lg font-mono font-bold text-emerald-400">--:--:--</div>
-              </div>
-              <div>
-                <div class="flex justify-between text-xs mb-1">
-                  <span class="text-slate-300">Reflection Cutoff (Tue 9:05 AM)</span>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">EduPlan Portal</h1>
+                    <p class="text-xs text-slate-400">School Weekly Submission Tracker</p>
                 </div>
-                <div id="refCountdown" class="text-lg font-mono font-bold text-amber-400">--:--:--</div>
-              </div>
             </div>
-          </div>
+
+            <!-- Current Role & Quick Test Switcher -->
+            <div class="flex items-center space-x-4">
+                <div id="authUserInfo" class="hidden sm:flex items-center space-x-2 text-sm bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                    <span id="userNameDisplay" class="font-medium text-slate-200">Loading...</span>
+                    <span id="userRoleBadge" class="text-xs px-2 py-0.5 rounded-full bg-sky-900 text-sky-300 font-semibold uppercase">User</span>
+                </div>
+
+                <div class="relative inline-block text-left" id="demoRoleSection">
+                    <button id="roleSwitchBtn" onclick="toggleRoleDropdown()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 flex items-center space-x-1 transition">
+                        <i class="fa-solid fa-arrows-rotate text-sky-400"></i>
+                        <span>Switch Demo View</span>
+                        <i class="fa-solid fa-chevron-down text-xs ml-1"></i>
+                    </button>
+                    <div id="roleDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white text-slate-800 rounded-xl shadow-xl border border-slate-200 py-1 z-50">
+                        <div class="px-3 py-1.5 text-xs text-slate-400 font-semibold border-b border-slate-100">QUICK ROLE SWITCH</div>
+                        <button onclick="switchDemoUser('admin')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 flex items-center justify-between">
+                            <span><i class="fa-solid fa-user-shield text-indigo-600 mr-2"></i> Principal / Admin</span>
+                        </button>
+                        <button onclick="switchDemoUser('teacher')" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-100 flex items-center justify-between">
+                            <span><i class="fa-solid fa-chalkboard-user text-emerald-600 mr-2"></i> Teacher View</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button id="logoutBtn" onclick="handleLogout()" class="hidden text-slate-400 hover:text-rose-400 text-sm font-medium transition">
+                    <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
+                </button>
+            </div>
         </div>
-      </div>
+    </header>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 relative">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h3 class="font-bold text-lg">1. Weekly Lesson Plan</h3>
-              <p class="text-xs text-slate-400">Target window: Mon 12:00 AM - 9:00 AM</p>
-            </div>
-            <span id="lpStatusBadge" class="px-3 py-1 text-xs font-bold rounded-full bg-slate-700 text-slate-300">
-              NOT SUBMITTED
-            </span>
-          </div>
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-          <form id="lpUploadForm" class="space-y-4">
-            <div class="border-2 border-dashed border-slate-700 rounded-xl p-6 text-center hover:border-indigo-500/50 transition">
-              <i class="fa-solid fa-cloud-arrow-up text-3xl text-indigo-400 mb-2"></i>
-              <p class="text-xs text-slate-300 mb-2">Select your Lesson Plan (.pdf, .doc, .docx)</p>
-              <input type="file" id="lpFileInput" accept=".pdf,.doc,.docx" required class="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-600 file:text-white file:text-xs hover:file:bg-indigo-500 cursor-pointer">
+        <!-- Login Card (Displayed when not logged in) -->
+        <section id="loginSection" class="max-w-md mx-auto my-12">
+            <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-sky-100 text-sky-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl">
+                        <i class="fa-solid fa-school"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900">Portal Login</h2>
+                    <p class="text-sm text-slate-500 mt-1">Sign in with your assigned school credentials</p>
+                </div>
+
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Username / Email</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-user"></i></span>
+                            <input type="text" id="loginUsername" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm" placeholder="e.g. teacher.maria or admin">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Password</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                            <input type="password" id="loginPassword" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm" placeholder="••••••••">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-semibold shadow-lg shadow-sky-500/30 transition duration-150">
+                        Sign In to Portal
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-6 border-t border-slate-100 text-center">
+                    <p class="text-xs text-slate-400 mb-2">First time here or testing without credentials?</p>
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="switchDemoUser('teacher')" class="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-100 transition">
+                            Login as Teacher
+                        </button>
+                        <button onclick="switchDemoUser('admin')" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-medium hover:bg-indigo-100 transition">
+                            Login as Admin
+                        </button>
+                    </div>
+                </div>
             </div>
-            <button type="submit" id="lpSubmitBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 font-semibold py-2.5 rounded-lg text-sm transition">
-              Upload Lesson Plan to Drive
+        </section>
+
+        <!-- Dynamic Portal Views (Hidden until authenticated) -->
+        <div id="portalContent" class="hidden space-y-6">
+
+            <!-- System Weekly Clock & Info Banner -->
+            <div class="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 rounded-2xl text-white p-6 shadow-xl relative overflow-hidden">
+                <div class="absolute right-0 top-0 bottom-0 opacity-10 flex items-center justify-center pr-10 pointer-events-none">
+                    <i class="fa-solid fa-clock text-9xl"></i>
+                </div>
+                <div class="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    <div>
+                        <span class="px-2.5 py-1 bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-full text-xs font-semibold tracking-wide uppercase">
+                            Current Cycle: Week <span id="currentWeekNum">--</span>
+                        </span>
+                        <h2 class="text-2xl font-bold mt-2" id="currentDateStr">Loading Date...</h2>
+                        <p class="text-slate-400 text-xs mt-1" id="timeZoneInfo">Standard Time Zone (Local)</p>
+                    </div>
+
+                    <!-- Live Countdown Timers Container -->
+                    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Lesson Plan Window Status -->
+                        <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-medium text-slate-300"><i class="fa-solid fa-file-lines mr-1 text-sky-400"></i> Lesson Plan Window</span>
+                                <span id="lpStatusBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">MON 00:00 - 09:00</span>
+                            </div>
+                            <div id="lpTimerText" class="text-xl font-bold text-white tracking-wider">--h --m --s</div>
+                            <p class="text-[11px] text-slate-400 mt-1" id="lpTimerSub">Time remaining for ON-TIME upload</p>
+                        </div>
+
+                        <!-- Reflection Window Status -->
+                        <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-medium text-slate-300"><i class="fa-solid fa-brain mr-1 text-purple-400"></i> Reflection Window</span>
+                                <span id="refStatusBadge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">MON 09:05 - TUE 09:05</span>
+                            </div>
+                            <div id="refTimerText" class="text-xl font-bold text-white tracking-wider">--h --m --s</div>
+                            <p class="text-[11px] text-slate-400 mt-1" id="refTimerSub">Unlocks after Lesson Plan submission</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEACHER DASHBOARD VIEW -->
+            <div id="teacherDashboard" class="space-y-6 hidden">
+
+                <!-- Actions Header -->
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Weekly Upload Terminal</h2>
+                        <p class="text-xs text-slate-500">Upload your Google Drive document links or files for this week.</p>
+                    </div>
+                    <div>
+                        <button onclick="openPasswordModal()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center transition">
+                            <i class="fa-solid fa-key mr-2 text-slate-500"></i> Change Password
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Teacher Upload Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <!-- CARD 1: LESSON PLAN UPLOAD -->
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                        <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center font-bold">
+                                    1
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800">Weekly Lesson Plan</h3>
+                                    <p class="text-xs text-slate-500">PDF, DOC, DOCX via Google Drive</p>
+                                </div>
+                            </div>
+                            <span id="lpTeacherStatusPill" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                                NOT SUBMITTED
+                            </span>
+                        </div>
+
+                        <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                            <!-- Rule banner -->
+                            <div class="bg-sky-50 border border-sky-100 rounded-xl p-3 text-xs text-sky-800 space-y-1">
+                                <p class="font-semibold"><i class="fa-solid fa-circle-info mr-1"></i> Schedule Rules:</p>
+                                <p>• <strong>On-Time:</strong> Monday 12:00 AM to 9:00 AM</p>
+                                <p>• <strong>Late:</strong> Monday 9:05 AM to Sunday 11:59 PM</p>
+                            </div>
+
+                            <!-- Upload Form / Current Details -->
+                            <div id="lpUploadContainer">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Google Drive Sharing Link / File URL</label>
+                                <div class="flex gap-2 mb-3">
+                                    <input type="url" id="lpUrlInput" placeholder="https://drive.google.com/file/d/..." class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none">
+                                    <button onclick="generateMockDriveLink('lp')" type="button" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs rounded-lg font-medium whitespace-nowrap" title="Auto fill demo link">
+                                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Demo Link
+                                    </button>
+                                </div>
+                                <button id="submitLpBtn" onclick="submitFile('lessonPlan')" class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-semibold text-sm shadow transition">
+                                    Submit Lesson Plan
+                                </button>
+                            </div>
+
+                            <!-- Submission Receipt Info -->
+                            <div id="lpReceiptCard" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2">
+                                <div class="flex justify-between items-center text-slate-600">
+                                    <span>Submitted Link:</span>
+                                    <a id="lpReceiptLink" href="#" target="_blank" class="text-sky-600 font-semibold underline truncate max-w-[180px]">View Document</a>
+                                </div>
+                                <div class="flex justify-between text-slate-500">
+                                    <span>Timestamp:</span>
+                                    <span id="lpReceiptTime" class="font-medium text-slate-700">--</span>
+                                </div>
+                                <!-- Admin View Tracking -->
+                                <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
+                                    <span class="text-slate-500">Principal/Admin Status:</span>
+                                    <span id="lpAdminAudit" class="font-semibold text-amber-600 flex items-center">
+                                        <i class="fa-solid fa-clock mr-1"></i> Pending Review
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CARD 2: REFLECTION UPLOAD -->
+                    <div id="reflectionCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col opacity-60">
+                        <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-bold">
+                                    2
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800">Weekly Reflection</h3>
+                                    <p class="text-xs text-slate-500">Unlocked after Lesson Plan submission</p>
+                                </div>
+                            </div>
+                            <span id="refTeacherStatusPill" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                                LOCKED
+                            </span>
+                        </div>
+
+                        <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+                            <!-- Rule banner -->
+                            <div class="bg-purple-50 border border-purple-100 rounded-xl p-3 text-xs text-purple-800 space-y-1">
+                                <p class="font-semibold"><i class="fa-solid fa-circle-info mr-1"></i> Schedule Rules:</p>
+                                <p>• <strong>On-Time:</strong> Monday 09:05 AM to Tuesday 09:05 AM</p>
+                                <p>• <strong>Late:</strong> Tuesday 09:06 AM to Sunday 11:59 PM</p>
+                            </div>
+
+                            <!-- Upload Form / Current Details -->
+                            <div id="refUploadContainer" class="pointer-events-none">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Google Drive Sharing Link / File URL</label>
+                                <div class="flex gap-2 mb-3">
+                                    <input type="url" id="refUrlInput" disabled placeholder="Unlock by submitting Lesson Plan first" class="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none bg-slate-100">
+                                    <button id="refDemoBtn" disabled onclick="generateMockDriveLink('ref')" type="button" class="px-3 py-2 bg-slate-100 text-slate-400 text-xs rounded-lg font-medium whitespace-nowrap">
+                                        Demo Link
+                                    </button>
+                                </div>
+                                <button id="submitRefBtn" disabled onclick="submitFile('reflection')" class="w-full py-2.5 bg-purple-600 text-white rounded-lg font-semibold text-sm shadow opacity-50 cursor-not-allowed">
+                                    Submit Reflection
+                                </button>
+                            </div>
+
+                            <!-- Submission Receipt Info -->
+                            <div id="refReceiptCard" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2">
+                                <div class="flex justify-between items-center text-slate-600">
+                                    <span>Submitted Link:</span>
+                                    <a id="refReceiptLink" href="#" target="_blank" class="text-purple-600 font-semibold underline truncate max-w-[180px]">View Document</a>
+                                </div>
+                                <div class="flex justify-between text-slate-500">
+                                    <span>Timestamp:</span>
+                                    <span id="refReceiptTime" class="font-medium text-slate-700">--</span>
+                                </div>
+                                <!-- Admin View Tracking -->
+                                <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
+                                    <span class="text-slate-500">Principal/Admin Status:</span>
+                                    <span id="refAdminAudit" class="font-semibold text-amber-600 flex items-center">
+                                        <i class="fa-solid fa-clock mr-1"></i> Pending Review
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ADMIN DASHBOARD VIEW -->
+            <div id="adminDashboard" class="space-y-6 hidden">
+
+                <!-- Admin Navigation Tabs -->
+                <div class="flex space-x-2 border-b border-slate-200 pb-2 overflow-x-auto">
+                    <button onclick="switchAdminTab('overview')" id="tabBtnOverview" class="px-4 py-2 font-semibold text-sm rounded-xl bg-sky-600 text-white shadow">
+                        <i class="fa-solid fa-chart-pie mr-2"></i> Dashboard & Metrics
+                    </button>
+                    <button onclick="switchAdminTab('teachers')" id="tabBtnTeachers" class="px-4 py-2 font-semibold text-sm rounded-xl bg-white text-slate-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-users mr-2"></i> Teacher Roster Management
+                    </button>
+                    <button onclick="switchAdminTab('performance')" id="tabBtnPerformance" class="px-4 py-2 font-semibold text-sm rounded-xl bg-white text-slate-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-user-check mr-2"></i> Admin SLA Tracker
+                    </button>
+                </div>
+
+                <!-- TAB 1: OVERVIEW & SUBMISSION MASTER TABLE -->
+                <div id="adminTabOverview" class="space-y-6">
+                    <!-- Metrics Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                                <i class="fa-solid fa-users"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase">Enrolled Teachers</p>
+                                <h3 id="statTotalTeachers" class="text-2xl font-bold text-slate-800">0</h3>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase">On-Time Submissions</p>
+                                <h3 id="statOnTime" class="text-2xl font-bold text-emerald-600">0</h3>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase">Late Submissions</p>
+                                <h3 id="statLate" class="text-2xl font-bold text-amber-600">0</h3>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                                <i class="fa-solid fa-hourglass-start"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 font-semibold uppercase">Pending Uploads</p>
+                                <h3 id="statPending" class="text-2xl font-bold text-rose-600">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Master Submissions Table -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-slate-800">Weekly Teacher Submission Directory</h3>
+                                <p class="text-xs text-slate-500">Real-time submission links and inspection actions for this week</p>
+                            </div>
+                            <button onclick="refreshData()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs rounded-lg font-medium">
+                                <i class="fa-solid fa-rotate mr-1"></i> Refresh Data
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-500 font-semibold text-xs uppercase border-b border-slate-200">
+                                        <th class="p-4">Teacher Name</th>
+                                        <th class="p-4">Grade/Subject</th>
+                                        <th class="p-4">Lesson Plan Status</th>
+                                        <th class="p-4">Reflection Status</th>
+                                        <th class="p-4">Action & Link</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="masterTableBody" class="divide-y divide-slate-100">
+                                    <!-- Dynamic rows inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: TEACHER ROSTER MANAGEMENT -->
+                <div id="adminTabTeachers" class="space-y-6 hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Add Teacher Form -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                            <h3 class="font-bold text-slate-800 text-base flex items-center">
+                                <i class="fa-solid fa-user-plus mr-2 text-sky-600"></i> Enroll New Teacher
+                            </h3>
+                            <form id="enrollTeacherForm" onsubmit="handleEnrollTeacher(event)" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
+                                    <input type="text" id="enrollName" required placeholder="e.g. Maria Santos" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Grade Level / Subject</label>
+                                    <input type="text" id="enrollSubject" required placeholder="e.g. Grade 5 Science" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Assigned Username</label>
+                                    <input type="text" id="enrollUsername" required placeholder="e.g. msantos" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Default Password</label>
+                                    <input type="text" id="enrollPassword" required value="teacher123" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                                </div>
+                                <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm transition">
+                                    Enroll Teacher
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Teacher List -->
+                        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="p-5 border-b border-slate-100">
+                                <h3 class="font-bold text-slate-800">Active Teacher Roster</h3>
+                                <p class="text-xs text-slate-500">Manage teacher accounts and access permissions</p>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-50 text-slate-500 font-semibold text-xs uppercase border-b border-slate-200">
+                                            <th class="p-4">Teacher</th>
+                                            <th class="p-4">Subject</th>
+                                            <th class="p-4">Username</th>
+                                            <th class="p-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="teacherRosterBody" class="divide-y divide-slate-100">
+                                        <!-- Dynamic roster -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: ADMIN PERFORMANCE TRACKER (SLA EVALUATION) -->
+                <div id="adminTabPerformance" class="space-y-6 hidden">
+                    <!-- Rule Banner -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start space-x-4">
+                        <div class="p-3 bg-amber-100 text-amber-700 rounded-xl">
+                            <i class="fa-solid fa-clock-rotate-left text-2xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-amber-900 text-base">Admin Performance & Review SLA Policy</h4>
+                            <p class="text-xs text-amber-800 mt-1">
+                                As Principal/Admin, you are evaluated on review efficiency. For any file uploaded by a teacher, you must click <strong>"View & Acknowledge File"</strong> before <strong>5:05 PM</strong> on the day it was uploaded. Reviews completed after 5:05 PM on the upload day (or subsequent days) are flagged as <span class="font-bold text-rose-700">LATE REVIEW</span>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Performance Scorecard -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs text-slate-500 font-semibold uppercase">Total Files Reviewed</p>
+                            <h3 id="statAdminReviewedCount" class="text-3xl font-bold text-slate-800 mt-1">0</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs text-slate-500 font-semibold uppercase">Reviewed On-Time (&lt; 5:05 PM)</p>
+                            <h3 id="statAdminOnTimeCount" class="text-3xl font-bold text-emerald-600 mt-1">0</h3>
+                        </div>
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <p class="text-xs text-slate-500 font-semibold uppercase">Late Reviews (&gt; 5:05 PM)</p>
+                            <h3 id="statAdminLateCount" class="text-3xl font-bold text-rose-600 mt-1">0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Detailed SLA Audit Log Table -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="p-5 border-b border-slate-100">
+                            <h3 class="font-bold text-slate-800">Admin Inspection Log & Compliance Audit</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-500 font-semibold text-xs uppercase border-b border-slate-200">
+                                        <th class="p-4">Teacher & Document</th>
+                                        <th class="p-4">Teacher Upload Time</th>
+                                        <th class="p-4">5:05 PM Target Deadline</th>
+                                        <th class="p-4">Admin Review Time</th>
+                                        <th class="p-4">Admin SLA Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminSlaTableBody" class="divide-y divide-slate-100">
+                                    <!-- Dynamic SLA items -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Password Modal -->
+    <div id="passwordModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 relative">
+            <button onclick="closePasswordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
-          </form>
-
-          <div id="lpAuditInfo" class="mt-4 pt-4 border-t border-slate-700 text-xs text-slate-400 hidden">
-            <div class="flex justify-between items-center">
-              <span>Admin Review Status:</span>
-              <span id="lpReviewState" class="font-semibold text-slate-200">Pending Review</span>
-            </div>
-          </div>
+            <h3 class="font-bold text-slate-800 text-lg mb-4">Change Password</h3>
+            <form onsubmit="handleChangePassword(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">New Password</label>
+                    <input type="password" id="newPasswordInput" required minlength="4" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closePasswordModal()" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-sky-600 text-white text-xs font-semibold rounded-lg shadow">Save New Password</button>
+                </div>
+            </form>
         </div>
-
-        <div id="reflectionContainer" class="bg-slate-800 border border-slate-700 rounded-2xl p-6 opacity-60 pointer-events-none relative">
-          <div id="refLockOverlay" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center z-10 text-center p-4">
-            <i class="fa-solid fa-lock text-3xl text-slate-500 mb-2"></i>
-            <p class="font-semibold text-sm">Reflection Locked</p>
-            <p class="text-xs text-slate-400">Submit your Lesson Plan first to unlock this section.</p>
-          </div>
-
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h3 class="font-bold text-lg">2. Weekly Reflection</h3>
-              <p class="text-xs text-slate-400">Target window: Mon 9:05 AM - Tue 9:05 AM</p>
-            </div>
-            <span id="refStatusBadge" class="px-3 py-1 text-xs font-bold rounded-full bg-slate-700 text-slate-300">
-              LOCKED
-            </span>
-          </div>
-
-          <form id="refUploadForm" class="space-y-4">
-            <div class="border-2 border-dashed border-slate-700 rounded-xl p-6 text-center">
-              <i class="fa-solid fa-cloud-arrow-up text-3xl text-amber-400 mb-2"></i>
-              <p class="text-xs text-slate-300 mb-2">Select your Reflection (.pdf, .doc, .docx)</p>
-              <input type="file" id="refFileInput" accept=".pdf,.doc,.docx" required class="text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-amber-600 file:text-white file:text-xs cursor-pointer">
-            </div>
-            <button type="submit" id="refSubmitBtn" class="w-full bg-amber-600 hover:bg-amber-500 font-semibold py-2.5 rounded-lg text-sm transition text-slate-950 font-bold">
-              Upload Reflection to Drive
-            </button>
-          </form>
-
-          <div id="refAuditInfo" class="mt-4 pt-4 border-t border-slate-700 text-xs text-slate-400 hidden">
-            <div class="flex justify-between items-center">
-              <span>Admin Review Status:</span>
-              <span id="refReviewState" class="font-semibold text-slate-200">Pending Review</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md">
-        <h3 class="font-bold text-sm mb-3">Change Account Password</h3>
-        <form id="changePasswordForm" class="space-y-3">
-          <input type="password" id="newPasswordInput" placeholder="New Password" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
-          <button type="submit" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg text-xs font-semibold transition">
-            Update Password
-          </button>
-        </form>
-      </div>
     </div>
 
-    <div id="adminDashboard" class="hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl">
-          <span class="text-xs text-slate-400 font-medium">Total Enrolled Teachers</span>
-          <div id="statTotalTeachers" class="text-3xl font-bold mt-1 text-white">0</div>
-        </div>
-        <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl">
-          <span class="text-xs text-slate-400 font-medium">On-Time Submissions</span>
-          <div id="statOnTime" class="text-3xl font-bold mt-1 text-emerald-400">0</div>
-        </div>
-        <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl">
-          <span class="text-xs text-slate-400 font-medium">Late Submissions</span>
-          <div id="statLate" class="text-3xl font-bold mt-1 text-amber-400">0</div>
-        </div>
-        <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl border-l-4 border-l-indigo-500">
-          <span class="text-xs text-slate-400 font-medium">Admin Review Compliance (5:05 PM SLA)</span>
-          <div id="statAdminSLA" class="text-xl font-bold mt-1 text-indigo-400">100% On-Time</div>
-        </div>
-      </div>
+    <!-- Notification Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
 
-      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="font-bold text-lg">Teacher Roster & Submissions</h3>
-          <button id="openAddTeacherModal" class="bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold px-4 py-2 rounded-lg transition">
-            <i class="fa-solid fa-plus mr-1"></i> Enroll Teacher Account
-          </button>
-        </div>
+    <!-- Application Script Logic -->
+    <script>
+        const SYSTEM_CONFIG = {
+            firebase: {
+                apiKey: "AIzaSyDWXRGUViHaIBXwcLRK10HyVeJLFbO5YfQ",
+                authDomain: "school-lesson-plan-porta-c8ff2.firebaseapp.com",
+                projectId: "school-lesson-plan-porta-c8ff2",
+                storageBucket: "school-lesson-plan-porta-c8ff2.firebasestorage.app",
+                messagingSenderId: "15751107458",
+                appId: "1:15751107458:web:73f6a5a40777947d7d759b"
+            },
+            adminEmail: "kinuartelansupply@gmail.com",
+            adminUid: "LqtM4Hz1nRVkCcrq9GcWak5BNyU2",
+            teacherEmailDomain: "school-lesson-plan-porta-c8ff2.firebaseapp.com"
+        };
 
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-300">
-            <thead class="bg-slate-900 text-xs uppercase text-slate-400 border-b border-slate-700">
-              <tr>
-                <th class="p-3">Teacher</th>
-                <th class="p-3">Lesson Plan</th>
-                <th class="p-3">Reflection</th>
-                <th class="p-3">Drive Link</th>
-                <th class="p-3">Admin Review Status</th>
-                <th class="p-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="teacherTableBody" class="divide-y divide-slate-700/50"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  </main>
+        const app = firebase.initializeApp(SYSTEM_CONFIG.firebase);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const secondaryApp = firebase.initializeApp(SYSTEM_CONFIG.firebase, "TeacherEnrollment");
+        const secondaryAuth = secondaryApp.auth();
 
-  <div id="teacherModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold text-lg">Enroll New Teacher</h3>
-        <button id="closeTeacherModal" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <form id="enrollTeacherForm" class="space-y-4">
-        <div>
-          <label class="block text-xs uppercase text-slate-400 mb-1">Full Name</label>
-          <input type="text" id="newTeacherName" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100">
-        </div>
-        <div>
-          <label class="block text-xs uppercase text-slate-400 mb-1">Email Address</label>
-          <input type="email" id="newTeacherEmail" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100">
-        </div>
-        <div>
-          <label class="block text-xs uppercase text-slate-400 mb-1">Assign Password</label>
-          <input type="password" id="newTeacherPassword" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100">
-        </div>
-        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 font-semibold py-2.5 rounded-lg text-sm transition">
-          Create Teacher Account
-        </button>
-      </form>
-    </div>
-  </div>
+        let currentUser = null;
+        let currentUserRole = null;
+        let teachers = [];
+        let weeklySubmissions = {};
+        let authReady = false;
 
-  <script>
-    const SYSTEM_CONFIG = {
-      firebase: {
-        apiKey: "AIzaSyDWXRGUViHaIBXwcLRK10HyVeJLFbO5YfQ",
-        authDomain: "school-lesson-plan-porta-c8ff2.firebaseapp.com",
-        projectId: "school-lesson-plan-porta-c8ff2",
-        storageBucket: "school-lesson-plan-porta-c8ff2.firebasestorage.app",
-        messagingSenderId: "15751107458",
-        appId: "1:15751107458:web:73f6a5a40777947d7d759b"
-      },
-      vapidKey: "BImLCvphJWxUKeSxtGuf9YrcDJPRFRg8cr-jxjkIVHcFTeFhKx2c5ReQ6hibccb8KwIWkWCFwlTF6QRDZxUOPYM",
-      driveFolderId: "1GjvBq1MVRfP7NgGjxW73xDifh4rLC9sm",
-      adminUid: "LqtM4Hz1nRVkCcrq9GcWak5BNyU2"
-    };
-
-    firebase.initializeApp(SYSTEM_CONFIG.firebase);
-
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-  
-
-    const secondaryApp = firebase.initializeApp(SYSTEM_CONFIG.firebase, "Secondary");
-    const secondaryAuth = secondaryApp.auth();
-
-    let currentUser = null;
-    let currentUserRole = null;
-
-    const loginUsername = document.getElementById('loginUsername');
-    const loginPassword = document.getElementById('loginPassword');
-    const passwordField = document.getElementById('passwordField');
-    const loginButton = document.getElementById('loginButton');
-
-    function updateTimers() {
-      const now = new Date();
-      const day = now.getDay();
-
-      const lpCutoff = new Date(now);
-      lpCutoff.setHours(9, 0, 0, 0);
-
-      if (day !== 1 || now > lpCutoff) {
-        const daysUntilMon = (8 - day) % 7 || 7;
-        lpCutoff.setDate(now.getDate() + daysUntilMon);
-        lpCutoff.setHours(9, 0, 0, 0);
-      }
-
-      const refCutoff = new Date(now);
-      refCutoff.setHours(9, 5, 0, 0);
-
-      if (day > 2 || (day === 2 && now > refCutoff)) {
-        const daysUntilTue = (9 - day) % 7 || 7;
-        refCutoff.setDate(now.getDate() + daysUntilTue);
-        refCutoff.setHours(9, 5, 0, 0);
-      }
-
-      const lpDiff = lpCutoff - now;
-      const refDiff = refCutoff - now;
-
-      document.getElementById('lpCountdown').textContent = formatTimeDiff(lpDiff);
-      document.getElementById('refCountdown').textContent = formatTimeDiff(refDiff);
-    }
-
-    function formatTimeDiff(ms) {
-      if (ms <= 0) return "WINDOW CLOSED";
-
-      const hours = Math.floor(ms / (1000 * 60 * 60));
-      const mins = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
-      const secs = Math.floor((ms % (1000 * 60)) / 1000);
-
-      return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
-
-    setInterval(updateTimers, 1000);
-    updateTimers();
-
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const username = loginUsername.value.trim();
-      const password = loginPassword.value;
-
-      loginButton.disabled = true;
-      loginButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Signing In';
-
-      try {
-        if (!username) {
-          throw new Error("Enter your username.");
+        function normalizeUsername(value) {
+            return String(value || "").trim().toLowerCase();
         }
 
-        if (!password) {
-          throw new Error("Enter your password.");
+        function usernameToEmail(username) {
+            return `teacher.${normalizeUsername(username)}@${SYSTEM_CONFIG.teacherEmailDomain}`;
         }
 
-        const email = username.toLowerCase() === 'admin'
-          ? 'kinuartelansupply@gmail.com'
-          : username;
-
-        const result = await auth.signInWithEmailAndPassword(email, password);
-        currentUser = result.user;
-        await checkUserRole(currentUser);
-      } catch (err) {
-        alert("Login failed: " + (err.message || err));
-      } finally {
-        loginButton.disabled = false;
-        loginButton.textContent = 'Sign In';
-      }
-    });
-
-
-    async function checkUserRole(user) {
-      const doc = await db.collection('users').doc(user.uid).get();
-
-      if (!doc.exists) {
-        await auth.signOut();
-        currentUser = null;
-        currentUserRole = null;
-        throw new Error("Your account does not have an assigned portal profile.");
-      }
-
-      const userData = doc.data();
-
-      if (userData.role === 'admin') {
-        currentUserRole = 'admin';
-        showAdminDashboard();
-        return;
-      }
-
-      if (userData.role === 'teacher') {
-        currentUserRole = 'teacher';
-        showTeacherDashboard(user, userData);
-        return;
-      }
-
-      await auth.signOut();
-      currentUser = null;
-      currentUserRole = null;
-      throw new Error("Your account does not have permission to access this portal.");
-    }
-
-    function showAdminDashboard() {
-      document.getElementById('loginView').classList.add('hidden');
-      document.getElementById('teacherDashboard').classList.add('hidden');
-      document.getElementById('adminDashboard').classList.remove('hidden');
-
-      document.getElementById('authHeaderState').innerHTML = `
-        <span class="text-sm text-slate-300">Administrator</span>
-        <button id="logoutButton" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg">Sign Out</button>
-      `;
-
-      document.getElementById('logoutButton').addEventListener('click', signOutUser);
-      loadAdminData();
-    }
-
-    function showTeacherDashboard(user, userData) {
-      document.getElementById('loginView').classList.add('hidden');
-      document.getElementById('adminDashboard').classList.add('hidden');
-      document.getElementById('teacherDashboard').classList.remove('hidden');
-
-      document.getElementById('teacherWelcome').textContent = `Welcome Back, ${userData.name || user.email || 'Teacher'}`;
-
-      document.getElementById('authHeaderState').innerHTML = `
-        <span class="text-sm text-slate-300">${userData.name || user.email || 'Teacher'}</span>
-        <button id="logoutButton" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg">Sign Out</button>
-      `;
-
-      document.getElementById('logoutButton').addEventListener('click', signOutUser);
-      loadTeacherSubmissions(user.uid);
-    }
-
-    async function signOutUser() {
-      try {
-        await auth.signOut();
-        currentUser = null;
-        currentUserRole = null;
-
-        document.getElementById('adminDashboard').classList.add('hidden');
-        document.getElementById('teacherDashboard').classList.add('hidden');
-        document.getElementById('loginView').classList.remove('hidden');
-        document.getElementById('authHeaderState').innerHTML = '';
-
-        document.getElementById('loginForm').reset();
-        passwordField.classList.remove('hidden');
-        loginPassword.required = true;
-        loginButton.innerHTML = 'Sign In';
-      } catch (err) {
-        alert("Unable to sign out: " + err.message);
-      }
-    }
-
-    async function loadTeacherSubmissions(uid) {
-      db.collection('submissions').doc(uid).onSnapshot(doc => {
-        if (doc.exists) {
-          const data = doc.data();
-
-          if (data.lessonPlan) {
-            document.getElementById('lpStatusBadge').textContent = data.lessonPlan.status;
-            document.getElementById('lpStatusBadge').className = `px-3 py-1 text-xs font-bold rounded-full ${data.lessonPlan.status === 'SUBMITTED' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`;
-
-            document.getElementById('reflectionContainer').classList.remove('opacity-60', 'pointer-events-none');
-            document.getElementById('refLockOverlay').classList.add('hidden');
-          }
-
-          if (data.reflection) {
-            document.getElementById('refStatusBadge').textContent = data.reflection.status;
-            document.getElementById('refStatusBadge').className = `px-3 py-1 text-xs font-bold rounded-full ${data.reflection.status === 'SUBMITTED' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`;
-          }
+        function loadStorageState() {
+            return Promise.resolve();
         }
-      }, error => {
-        alert("Unable to load submissions: " + error.message);
-      });
-    }
 
-    async function loadAdminData() {
-      db.collection('users').where('role', '==', 'teacher').onSnapshot(snapshot => {
-        document.getElementById('statTotalTeachers').textContent = snapshot.size;
+        function saveStorageState() {
+            return Promise.resolve();
+        }
 
-        const tbody = document.getElementById('teacherTableBody');
-        tbody.innerHTML = '';
+        function getWeekIdentifier(d = new Date()) {
+            const date = new Date(d.valueOf());
+            const dayNum = (d.getDay() + 6) % 7;
+            date.setDate(date.getDate() - dayNum + 3);
+            const firstThursday = date.valueOf();
+            date.setMonth(0, 1);
+            if (date.getDay() !== 4) {
+                date.setMonth(0, 1 + ((4 - date.getDay() + 7) % 7));
+            }
+            return Math.ceil((firstThursday - date) / (7 * 24 * 3600 * 1000)) + 1;
+        }
 
-        snapshot.forEach(doc => {
-          const teacher = doc.data();
+        function getWeeklyTimestamps() {
+            const now = new Date();
+            const currentDay = now.getDay();
+            const monday = new Date(now);
+            const diffToMon = (currentDay === 0 ? -6 : 1 - currentDay);
+            monday.setDate(now.getDate() + diffToMon);
+            monday.setHours(0, 0, 0, 0);
 
-          const row = document.createElement('tr');
+            const lpOnTimeEnd = new Date(monday);
+            lpOnTimeEnd.setHours(9, 0, 0, 0);
 
-          const nameCell = document.createElement('td');
-          nameCell.className = 'p-3 font-medium text-white';
-          nameCell.textContent = teacher.name || teacher.email || '';
+            const refStart = new Date(monday);
+            refStart.setHours(9, 5, 0, 0);
 
-          const lessonCell = document.createElement('td');
-          lessonCell.className = 'p-3';
-          lessonCell.innerHTML = '<span class="px-2 py-1 bg-slate-800 rounded text-xs border border-slate-700">Pending</span>';
+            const refOnTimeEnd = new Date(monday);
+            refOnTimeEnd.setDate(monday.getDate() + 1);
+            refOnTimeEnd.setHours(9, 5, 0, 0);
 
-          const reflectionCell = document.createElement('td');
-          reflectionCell.className = 'p-3';
-          reflectionCell.innerHTML = '<span class="px-2 py-1 bg-slate-800 rounded text-xs border border-slate-700">Locked</span>';
+            const sundayEnd = new Date(monday);
+            sundayEnd.setDate(monday.getDate() + 6);
+            sundayEnd.setHours(23, 59, 59, 999);
 
-          const driveCell = document.createElement('td');
-          driveCell.className = 'p-3';
-          const driveLink = document.createElement('a');
-          driveLink.href = `https://drive.google.com/drive/folders/${SYSTEM_CONFIG.driveFolderId}`;
-          driveLink.target = '_blank';
-          driveLink.rel = 'noopener noreferrer';
-          driveLink.className = 'text-indigo-400 hover:underline text-xs';
-          driveLink.innerHTML = '<i class="fa-solid fa-folder-open mr-1"></i> Drive Folder';
-          driveCell.appendChild(driveLink);
+            return { now, monday, lpOnTimeEnd, refStart, refOnTimeEnd, sundayEnd };
+        }
 
-          const reviewCell = document.createElement('td');
-          reviewCell.className = 'p-3 text-xs text-slate-400';
-          reviewCell.textContent = 'Not Viewed';
+        function updateClocksAndTimers() {
+            const { now, lpOnTimeEnd, refOnTimeEnd } = getWeeklyTimestamps();
+            document.getElementById('currentDateStr').innerText = now.toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            });
+            document.getElementById('currentWeekNum').innerText = getWeekIdentifier(now);
 
-          const actionCell = document.createElement('td');
-          actionCell.className = 'p-3 text-right';
+            const lpDiff = lpOnTimeEnd - now;
+            const lpTimerEl = document.getElementById('lpTimerText');
+            if (lpDiff > 0) {
+                lpTimerEl.innerText = formatDuration(lpDiff);
+                lpTimerEl.className = "text-xl font-bold text-emerald-400 tracking-wider";
+                document.getElementById('lpTimerSub').innerText = "Remaining for ON-TIME submission";
+            } else {
+                lpTimerEl.innerText = "LATE WINDOW ACTIVE";
+                lpTimerEl.className = "text-lg font-bold text-amber-400 tracking-wider";
+                document.getElementById('lpTimerSub').innerText = "Submissions now marked LATE until Sunday 11:59 PM";
+            }
 
-          const deleteButton = document.createElement('button');
-          deleteButton.className = 'text-red-400 hover:text-red-300 text-xs';
-          deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
-          deleteButton.addEventListener('click', () => deleteTeacher(doc.id));
+            const refDiff = refOnTimeEnd - now;
+            const refTimerEl = document.getElementById('refTimerText');
+            if (now < lpOnTimeEnd) {
+                refTimerEl.innerText = "Opens Mon 9:05 AM";
+                refTimerEl.className = "text-lg font-bold text-slate-300 tracking-wider";
+                document.getElementById('refTimerSub').innerText = "Requires Lesson Plan completion";
+            } else if (refDiff > 0) {
+                refTimerEl.innerText = formatDuration(refDiff);
+                refTimerEl.className = "text-xl font-bold text-purple-300 tracking-wider";
+                document.getElementById('refTimerSub').innerText = "Remaining for ON-TIME Reflection upload";
+            } else {
+                refTimerEl.innerText = "LATE WINDOW ACTIVE";
+                refTimerEl.className = "text-lg font-bold text-amber-400 tracking-wider";
+                document.getElementById('refTimerSub').innerText = "Submissions now marked LATE";
+            }
+        }
 
-          actionCell.appendChild(deleteButton);
+        function formatDuration(ms) {
+            const totalSec = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSec / 3600);
+            const mins = Math.floor((totalSec % 3600) / 60);
+            const secs = totalSec % 60;
+            return `${String(hours).padStart(2, '0')}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
+        }
 
-          row.appendChild(nameCell);
-          row.appendChild(lessonCell);
-          row.appendChild(reflectionCell);
-          row.appendChild(driveCell);
-          row.appendChild(reviewCell);
-          row.appendChild(actionCell);
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = normalizeUsername(document.getElementById('loginUsername').value);
+            const password = document.getElementById('loginPassword').value;
+            if (!username || !password) {
+                showToast("Enter your username and password.", "error");
+                return;
+            }
 
-          tbody.appendChild(row);
+            const email = username === "admin" ? SYSTEM_CONFIG.adminEmail : usernameToEmail(username);
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                showToast(error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-credential"
+                    ? "Invalid username or password."
+                    : error.message, "error");
+            }
+        }
+
+        function switchDemoUser(role) {
+            document.getElementById('roleDropdown').classList.add('hidden');
+            showToast("Sign in using your assigned username and password.", "info");
+        }
+
+        async function checkUserRole(user) {
+            try {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (!userDoc.exists) {
+                    await auth.signOut();
+                    showToast("Your account does not have an assigned portal profile.", "error");
+                    return;
+                }
+
+                const data = userDoc.data();
+                if (data.role !== "admin" && data.role !== "teacher") {
+                    await auth.signOut();
+                    showToast("Your account does not have permission to access this portal.", "error");
+                    return;
+                }
+
+                currentUserRole = data.role;
+                currentUser = {
+                    id: user.uid,
+                    uid: user.uid,
+                    name: data.name || data.fullName || (data.role === "admin" ? "Principal / Admin" : data.username),
+                    subject: data.subject || "",
+                    username: data.username || (data.role === "admin" ? "admin" : ""),
+                    email: data.email || user.email,
+                    role: data.role
+                };
+
+                document.getElementById('loginPassword').value = "";
+                loginAsUser(currentUser);
+
+                if (data.role === "admin") {
+                    await loadAdminData();
+                } else {
+                    await loadTeacherSubmissions(user.uid);
+                }
+            } catch (error) {
+                console.error(error);
+                showToast("Account verification failed: " + error.message, "error");
+                await auth.signOut().catch(() => {});
+            }
+        }
+
+        function loginAsUser(user) {
+            currentUser = user;
+            currentUserRole = user.role;
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('portalContent').classList.remove('hidden');
+            document.getElementById('logoutBtn').classList.remove('hidden');
+            document.getElementById('userNameDisplay').innerText = user.name;
+            document.getElementById('userRoleBadge').innerText = user.role.toUpperCase();
+
+            if (user.role === 'admin') {
+                document.getElementById('teacherDashboard').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                renderAdminDashboard();
+            } else {
+                document.getElementById('adminDashboard').classList.add('hidden');
+                document.getElementById('teacherDashboard').classList.remove('hidden');
+                renderTeacherDashboard();
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await auth.signOut();
+            } catch (error) {
+                showToast(error.message, "error");
+            }
+        }
+
+        function toggleRoleDropdown() {
+            document.getElementById('roleDropdown').classList.toggle('hidden');
+        }
+
+        async function loadTeacherSubmissions(uid) {
+            const snap = await db.collection('submissions').doc(uid).get();
+            weeklySubmissions[uid] = snap.exists ? snap.data() : {};
+            renderTeacherDashboard();
+        }
+
+        async function loadAdminData() {
+            const [teacherSnap, submissionSnap] = await Promise.all([
+                db.collection('users').where('role', '==', 'teacher').get(),
+                db.collection('submissions').get()
+            ]);
+
+            teachers = teacherSnap.docs.map(doc => ({
+                id: doc.id,
+                uid: doc.id,
+                name: doc.data().name || doc.data().fullName || "",
+                subject: doc.data().subject || "",
+                username: doc.data().username || "",
+                email: doc.data().email || ""
+            }));
+
+            weeklySubmissions = {};
+            submissionSnap.forEach(doc => {
+                weeklySubmissions[doc.id] = doc.data();
+            });
+            renderAdminDashboard();
+        }
+
+        function renderTeacherDashboard() {
+            if (!currentUser || currentUser.role !== 'teacher') return;
+
+            const sub = weeklySubmissions[currentUser.id] || {};
+            const lp = sub.lessonPlan;
+            const ref = sub.reflection;
+
+            const lpPill = document.getElementById('lpTeacherStatusPill');
+            const lpReceipt = document.getElementById('lpReceiptCard');
+            const lpUploadContainer = document.getElementById('lpUploadContainer');
+
+            if (lp) {
+                lpPill.innerText = lp.status;
+                lpPill.className = lp.status === 'SUBMITTED'
+                    ? "px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800"
+                    : "px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800";
+                lpUploadContainer.classList.add('hidden');
+                lpReceipt.classList.remove('hidden');
+                document.getElementById('lpReceiptLink').href = lp.fileUrl;
+                document.getElementById('lpReceiptTime').innerText = new Date(lp.timestamp).toLocaleString();
+
+                const lpAdminAudit = document.getElementById('lpAdminAudit');
+                if (lp.adminReviewed) {
+                    lpAdminAudit.className = "font-semibold text-emerald-600 flex items-center";
+                    lpAdminAudit.innerHTML = `<i class="fa-solid fa-check-circle mr-1"></i> Reviewed ${new Date(lp.adminReviewTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+                } else {
+                    lpAdminAudit.className = "font-semibold text-amber-600 flex items-center";
+                    lpAdminAudit.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> Pending Principal Review`;
+                }
+            } else {
+                lpPill.innerText = "NOT SUBMITTED";
+                lpPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600";
+                lpUploadContainer.classList.remove('hidden');
+                lpReceipt.classList.add('hidden');
+            }
+
+            const refCard = document.getElementById('reflectionCard');
+            const refPill = document.getElementById('refTeacherStatusPill');
+            const refReceipt = document.getElementById('refReceiptCard');
+            const refUploadContainer = document.getElementById('refUploadContainer');
+            const refUrlInput = document.getElementById('refUrlInput');
+            const submitRefBtn = document.getElementById('submitRefBtn');
+            const refDemoBtn = document.getElementById('refDemoBtn');
+
+            if (!lp) {
+                refCard.classList.add('opacity-60');
+                refPill.innerText = "LOCKED";
+                refPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500";
+                refUploadContainer.classList.add('pointer-events-none');
+                refUrlInput.disabled = true;
+                submitRefBtn.disabled = true;
+                refDemoBtn.disabled = true;
+                refReceipt.classList.add('hidden');
+            } else {
+                refCard.classList.remove('opacity-60');
+                refUploadContainer.classList.remove('pointer-events-none');
+                refUrlInput.disabled = false;
+                submitRefBtn.disabled = false;
+                submitRefBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                refDemoBtn.disabled = false;
+
+                if (ref) {
+                    refPill.innerText = ref.status;
+                    refPill.className = ref.status === 'SUBMITTED'
+                        ? "px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800"
+                        : "px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800";
+                    refUploadContainer.classList.add('hidden');
+                    refReceipt.classList.remove('hidden');
+                    document.getElementById('refReceiptLink').href = ref.fileUrl;
+                    document.getElementById('refReceiptTime').innerText = new Date(ref.timestamp).toLocaleString();
+
+                    const refAdminAudit = document.getElementById('refAdminAudit');
+                    if (ref.adminReviewed) {
+                        refAdminAudit.className = "font-semibold text-emerald-600 flex items-center";
+                        refAdminAudit.innerHTML = `<i class="fa-solid fa-check-circle mr-1"></i> Reviewed ${new Date(ref.adminReviewTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
+                    } else {
+                        refAdminAudit.className = "font-semibold text-amber-600 flex items-center";
+                        refAdminAudit.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> Pending Principal Review`;
+                    }
+                } else {
+                    refPill.innerText = "READY TO SUBMIT";
+                    refPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700";
+                    refUploadContainer.classList.remove('hidden');
+                    refReceipt.classList.add('hidden');
+                }
+            }
+        }
+
+        function generateMockDriveLink(type) {
+            const docType = type === 'lp' ? 'Lesson_Plan' : 'Reflection';
+            const randomId = Math.random().toString(36).substring(2, 10);
+            const mockUrl = `https://drive.google.com/file/d/1${randomId}_${docType}/view?usp=sharing`;
+            if (type === 'lp') {
+                document.getElementById('lpUrlInput').value = mockUrl;
+            } else {
+                document.getElementById('refUrlInput').value = mockUrl;
+            }
+            showToast("Google Drive link auto-filled!", "info");
+        }
+
+        async function submitFile(type) {
+            if (!currentUser || currentUser.role !== "teacher") return;
+            const isLP = type === 'lessonPlan';
+            const inputEl = isLP ? document.getElementById('lpUrlInput') : document.getElementById('refUrlInput');
+            const fileUrl = inputEl.value.trim();
+
+            if (!fileUrl) {
+                showToast("Please enter a valid document link", "error");
+                return;
+            }
+
+            if (!/^https:\/\/(drive\.google\.com|docs\.google\.com)\//i.test(fileUrl)) {
+                showToast("Please enter a valid Google Drive sharing link.", "error");
+                return;
+            }
+
+            const { now, lpOnTimeEnd, refOnTimeEnd } = getWeeklyTimestamps();
+            const status = isLP ? (now > lpOnTimeEnd ? 'LATE' : 'SUBMITTED') : (now > refOnTimeEnd ? 'LATE' : 'SUBMITTED');
+            const submission = {
+                fileUrl,
+                status,
+                timestamp: new Date().toISOString(),
+                adminReviewed: false,
+                adminReviewTime: null,
+                adminSlaStatus: null
+            };
+
+            try {
+                await db.collection('submissions').doc(currentUser.uid).set({
+                    uid: currentUser.uid,
+                    teacherName: currentUser.name,
+                    username: currentUser.username,
+                    [type]: submission
+                }, { merge: true });
+
+                if (!weeklySubmissions[currentUser.id]) weeklySubmissions[currentUser.id] = {};
+                weeklySubmissions[currentUser.id][type] = submission;
+                inputEl.value = "";
+                renderTeacherDashboard();
+                showToast(`${isLP ? 'Lesson Plan' : 'Reflection'} uploaded successfully! Status: ${status}`, "success");
+            } catch (error) {
+                showToast("Submission failed: " + error.message, "error");
+            }
+        }
+
+        function switchAdminTab(tab) {
+            ['Overview', 'Teachers', 'Performance'].forEach(t => {
+                const btn = document.getElementById(`tabBtn${t}`);
+                const section = document.getElementById(`adminTab${t}`);
+                if (t.toLowerCase() === tab.toLowerCase()) {
+                    btn.className = "px-4 py-2 font-semibold text-sm rounded-xl bg-sky-600 text-white shadow";
+                    section.classList.remove('hidden');
+                } else {
+                    btn.className = "px-4 py-2 font-semibold text-sm rounded-xl bg-white text-slate-600 hover:bg-slate-100";
+                    section.classList.add('hidden');
+                }
+            });
+            renderAdminDashboard();
+        }
+
+        function renderAdminDashboard() {
+            let totalTeachersCount = teachers.length;
+            let onTimeCount = 0;
+            let lateCount = 0;
+            let pendingCount = 0;
+            let adminReviewedTotal = 0;
+            let adminOnTimeReviews = 0;
+            let adminLateReviews = 0;
+
+            const tableBody = document.getElementById('masterTableBody');
+            const slaTableBody = document.getElementById('adminSlaTableBody');
+            if (!tableBody || !slaTableBody) return;
+            tableBody.innerHTML = '';
+            slaTableBody.innerHTML = '';
+
+            teachers.forEach(t => {
+                const sub = weeklySubmissions[t.id] || {};
+                const lp = sub.lessonPlan;
+                const ref = sub.reflection;
+
+                [lp, ref].forEach(item => {
+                    if (item) {
+                        if (item.status === 'SUBMITTED') onTimeCount++;
+                        if (item.status === 'LATE') lateCount++;
+                        if (item.adminReviewed) {
+                            adminReviewedTotal++;
+                            if (item.adminSlaStatus === 'ON-TIME REVIEW') adminOnTimeReviews++;
+                            if (item.adminSlaStatus === 'LATE REVIEW') adminLateReviews++;
+                        }
+                    } else {
+                        pendingCount++;
+                    }
+                });
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-800">
+                        ${escapeHtml(t.name)}
+                        <div class="text-xs font-normal text-slate-400">@${escapeHtml(t.username)}</div>
+                    </td>
+                    <td class="p-4 text-slate-600">${escapeHtml(t.subject)}</td>
+                    <td class="p-4">${getStatusBadgeHtml(lp, 'Lesson Plan')}</td>
+                    <td class="p-4">${getStatusBadgeHtml(ref, 'Reflection')}</td>
+                    <td class="p-4 space-y-1">${getAdminActionButtonsHtml(t.id, lp, ref)}</td>
+                `;
+                tableBody.appendChild(tr);
+
+                [{ doc: lp, name: 'Lesson Plan' }, { doc: ref, name: 'Reflection' }].forEach(item => {
+                    if (item.doc) {
+                        const slaTr = document.createElement('tr');
+                        slaTr.className = "hover:bg-slate-50 transition";
+                        const uploadDate = new Date(item.doc.timestamp);
+                        const deadline = new Date(uploadDate);
+                        deadline.setHours(17, 5, 0, 0);
+                        slaTr.innerHTML = `
+                            <td class="p-4">
+                                <div class="font-semibold text-slate-800">${escapeHtml(t.name)}</div>
+                                <div class="text-xs text-sky-600 font-medium">${item.name}</div>
+                            </td>
+                            <td class="p-4 text-xs text-slate-600">${uploadDate.toLocaleString()}</td>
+                            <td class="p-4 text-xs font-semibold text-amber-700">${deadline.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} (Same Day)</td>
+                            <td class="p-4 text-xs text-slate-600">${item.doc.adminReviewTime ? new Date(item.doc.adminReviewTime).toLocaleString() : '<span class="text-amber-500 italic">Unreviewed</span>'}</td>
+                            <td class="p-4">${getSlaBadgeHtml(item.doc.adminSlaStatus)}</td>
+                        `;
+                        slaTableBody.appendChild(slaTr);
+                    }
+                });
+            });
+
+            document.getElementById('statTotalTeachers').innerText = totalTeachersCount;
+            document.getElementById('statOnTime').innerText = onTimeCount;
+            document.getElementById('statLate').innerText = lateCount;
+            document.getElementById('statPending').innerText = pendingCount;
+            document.getElementById('statAdminReviewedCount').innerText = adminReviewedTotal;
+            document.getElementById('statAdminOnTimeCount').innerText = adminOnTimeReviews;
+            document.getElementById('statAdminLateCount').innerText = adminLateReviews;
+            renderRosterTable();
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "").replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function getStatusBadgeHtml(doc, label) {
+            if (!doc) return `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Not Uploaded</span>`;
+            const isLate = doc.status === 'LATE';
+            const colorClass = isLate ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200';
+            return `
+                <div class="inline-flex flex-col">
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border ${colorClass}">${doc.status}</span>
+                    <span class="text-[10px] text-slate-400 mt-1">${new Date(doc.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                </div>
+            `;
+        }
+
+        function getAdminActionButtonsHtml(teacherId, lp, ref) {
+            let html = '';
+            if (lp) {
+                html += `
+                    <div class="flex items-center space-x-2">
+                        <a href="${escapeHtml(lp.fileUrl)}" target="_blank" class="text-xs text-sky-600 font-medium hover:underline">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> LP Link
+                        </a>
+                        ${!lp.adminReviewed
+                            ? `<button onclick="acknowledgeDoc('${teacherId}', 'lessonPlan')" class="px-2 py-0.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded text-[11px] font-semibold">View & Acknowledge</button>`
+                            : `<span class="text-[10px] text-slate-400 font-medium"><i class="fa-solid fa-check text-emerald-500"></i> Reviewed</span>`
+                        }
+                    </div>
+                `;
+            }
+            if (ref) {
+                html += `
+                    <div class="flex items-center space-x-2">
+                        <a href="${escapeHtml(ref.fileUrl)}" target="_blank" class="text-xs text-purple-600 font-medium hover:underline">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Ref Link
+                        </a>
+                        ${!ref.adminReviewed
+                            ? `<button onclick="acknowledgeDoc('${teacherId}', 'reflection')" class="px-2 py-0.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300 rounded text-[11px] font-semibold">View & Acknowledge</button>`
+                            : `<span class="text-[10px] text-slate-400 font-medium"><i class="fa-solid fa-check text-purple-500"></i> Reviewed</span>`
+                        }
+                    </div>
+                `;
+            }
+            if (!lp && !ref) html = `<span class="text-xs text-slate-400 italic">No files available</span>`;
+            return html;
+        }
+
+        function getSlaBadgeHtml(slaStatus) {
+            if (!slaStatus) return `<span class="px-2.5 py-1 rounded-full text-xs bg-slate-100 text-slate-500">Pending Review</span>`;
+            if (slaStatus === 'ON-TIME REVIEW') return `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-bolt mr-1"></i> ON-TIME REVIEW</span>`;
+            return `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800"><i class="fa-solid fa-triangle-exclamation mr-1"></i> LATE REVIEW</span>`;
+        }
+
+        async function acknowledgeDoc(teacherId, docType) {
+            const doc = weeklySubmissions[teacherId] && weeklySubmissions[teacherId][docType];
+            if (!doc || !currentUser || currentUser.role !== "admin") return;
+
+            const reviewTime = new Date();
+            const uploadTime = new Date(doc.timestamp);
+            const targetDeadline = new Date(uploadTime);
+            targetDeadline.setHours(17, 5, 0, 0);
+            const slaStatus = reviewTime > targetDeadline ? 'LATE REVIEW' : 'ON-TIME REVIEW';
+
+            try {
+                const updates = {};
+                updates[`${docType}.adminReviewed`] = true;
+                updates[`${docType}.adminReviewTime`] = reviewTime.toISOString();
+                updates[`${docType}.adminSlaStatus`] = slaStatus;
+                await db.collection('submissions').doc(teacherId).update(updates);
+
+                doc.adminReviewed = true;
+                doc.adminReviewTime = reviewTime.toISOString();
+                doc.adminSlaStatus = slaStatus;
+                renderAdminDashboard();
+
+                if (slaStatus === 'LATE REVIEW') {
+                    showToast("File Acknowledged! Note: Review passed 5:05 PM deadline (Marked LATE REVIEW)", "error");
+                } else {
+                    showToast("File Acknowledged on-time!", "success");
+                }
+            } catch (error) {
+                showToast("Unable to acknowledge file: " + error.message, "error");
+            }
+        }
+
+        async function handleEnrollTeacher(e) {
+            e.preventDefault();
+            if (!currentUser || currentUser.role !== "admin") {
+                showToast("Only the administrator can enroll teachers.", "error");
+                return;
+            }
+
+            const name = document.getElementById('enrollName').value.trim();
+            const subject = document.getElementById('enrollSubject').value.trim();
+            const username = normalizeUsername(document.getElementById('enrollUsername').value);
+            const password = document.getElementById('enrollPassword').value;
+
+            if (!name || !subject || !username || !password) {
+                showToast("Complete all teacher details.", "error");
+                return;
+            }
+
+            if (!/^[a-z0-9._-]+$/.test(username)) {
+                showToast("Username may contain lowercase letters, numbers, dots, underscores, and hyphens only.", "error");
+                return;
+            }
+
+            try {
+                const existing = await db.collection('users').where('username', '==', username).limit(1).get();
+                if (!existing.empty) {
+                    showToast("Username already exists!", "error");
+                    return;
+                }
+
+                const email = usernameToEmail(username);
+                const credential = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+                const uid = credential.user.uid;
+
+                try {
+                    await db.collection('users').doc(uid).set({
+                        uid,
+                        name,
+                        fullName: name,
+                        subject,
+                        username,
+                        email,
+                        role: "teacher",
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (writeError) {
+                    await credential.user.delete().catch(() => {});
+                    throw writeError;
+                }
+
+                await secondaryAuth.signOut();
+                await loadAdminData();
+                e.target.reset();
+                document.getElementById('enrollPassword').value = 'teacher123';
+                showToast(`Enrolled ${name} successfully! Username: ${username}`, "success");
+            } catch (error) {
+                await secondaryAuth.signOut().catch(() => {});
+                const message = error.code === "auth/email-already-in-use"
+                    ? "That username is already assigned."
+                    : error.code === "auth/weak-password"
+                        ? "Password must be at least 6 characters."
+                        : error.message;
+                showToast("Unable to enroll teacher: " + message, "error");
+            }
+        }
+
+        function renderRosterTable() {
+            const body = document.getElementById('teacherRosterBody');
+            body.innerHTML = '';
+
+            teachers.forEach(t => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-800">${escapeHtml(t.name)}</td>
+                    <td class="p-4 text-slate-600">${escapeHtml(t.subject)}</td>
+                    <td class="p-4 font-mono text-xs text-slate-600">${escapeHtml(t.username)}</td>
+                    <td class="p-4 text-right">
+                        <button onclick="deleteTeacher('${t.id}')" class="px-2.5 py-1 text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg font-medium transition">
+                            <i class="fa-solid fa-trash-can mr-1"></i> Delete
+                        </button>
+                    </td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        async function deleteTeacher(id) {
+            if (!currentUser || currentUser.role !== "admin") return;
+            if (!confirm("Are you sure you want to delete this teacher account?")) return;
+
+            try {
+                await db.collection('users').doc(id).delete();
+                await db.collection('submissions').doc(id).delete();
+                teachers = teachers.filter(t => t.id !== id);
+                delete weeklySubmissions[id];
+                renderAdminDashboard();
+                showToast("Teacher portal profile deleted.", "info");
+            } catch (error) {
+                showToast("Unable to delete teacher: " + error.message, "error");
+            }
+        }
+
+        async function refreshData() {
+            try {
+                await loadAdminData();
+                showToast("Data refreshed", "info");
+            } catch (error) {
+                showToast("Unable to refresh data: " + error.message, "error");
+            }
+        }
+
+        function openPasswordModal() {
+            document.getElementById('passwordModal').classList.remove('hidden');
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+        }
+
+        async function handleChangePassword(e) {
+            e.preventDefault();
+            const newPw = document.getElementById('newPasswordInput').value;
+            if (!newPw || !currentUser || currentUser.role !== "teacher") return;
+
+            if (newPw.length < 6) {
+                showToast("Password must be at least 6 characters.", "error");
+                return;
+            }
+
+            try {
+                await auth.currentUser.updatePassword(newPw);
+                closePasswordModal();
+                document.getElementById('newPasswordInput').value = "";
+                showToast("Password updated successfully!", "success");
+            } catch (error) {
+                showToast(error.code === "auth/requires-recent-login"
+                    ? "Please sign out and sign in again before changing your password."
+                    : "Password update failed: " + error.message, "error");
+            }
+        }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgMap = {
+                success: 'bg-emerald-800 text-white border-emerald-700',
+                error: 'bg-rose-800 text-white border-rose-700',
+                info: 'bg-slate-800 text-white border-slate-700'
+            };
+            const iconMap = {
+                success: 'fa-circle-check text-emerald-400',
+                error: 'fa-circle-exclamation text-rose-400',
+                info: 'fa-circle-info text-sky-400'
+            };
+            toast.className = `p-3 rounded-xl shadow-lg border text-xs font-medium flex items-center space-x-2 ${bgMap[type]} transition transform translate-y-2 opacity-0 pointer-events-auto`;
+            const icon = document.createElement('i');
+            icon.className = `fa-solid ${iconMap[type]} text-sm`;
+            const span = document.createElement('span');
+            span.textContent = msg;
+            toast.append(icon, span);
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        window.onload = function() {
+            updateClocksAndTimers();
+            setInterval(updateClocksAndTimers, 1000);
+        };
+
+        auth.onAuthStateChanged(async user => {
+            if (user) {
+                await checkUserRole(user);
+            } else {
+                currentUser = null;
+                currentUserRole = null;
+                teachers = [];
+                weeklySubmissions = {};
+                document.getElementById('portalContent').classList.add('hidden');
+                document.getElementById('loginSection').classList.remove('hidden');
+                document.getElementById('logoutBtn').classList.add('hidden');
+                document.getElementById('userNameDisplay').innerText = "";
+                document.getElementById('userRoleBadge').innerText = "User";
+            }
         });
-      }, error => {
-        alert("Unable to load teacher records: " + error.message);
-      });
-    }
-
-    document.getElementById('openAddTeacherModal').addEventListener('click', () => {
-      document.getElementById('teacherModal').classList.remove('hidden');
-    });
-
-    document.getElementById('closeTeacherModal').addEventListener('click', () => {
-      document.getElementById('teacherModal').classList.add('hidden');
-    });
-
-    document.getElementById('enrollTeacherForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const name = document.getElementById('newTeacherName').value.trim();
-      const email = document.getElementById('newTeacherEmail').value.trim();
-      const password = document.getElementById('newTeacherPassword').value;
-
-      try {
-        if (!auth.currentUser || currentUserRole !== 'admin') {
-          throw new Error("Only the authorized administrator can enroll teachers.");
-        }
-
-        const adminDoc = await db.collection('users').doc(auth.currentUser.uid).get();
-
-        if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
-          throw new Error("Administrator profile verification failed.");
-        }
-
-        const cred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
-
-        try {
-          await db.collection('users').doc(cred.user.uid).set({
-            name: name,
-            email: email,
-            role: 'teacher',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          });
-        } catch (error) {
-          await cred.user.delete();
-          throw error;
-        }
-
-        await secondaryAuth.signOut();
-
-        document.getElementById('teacherModal').classList.add('hidden');
-        document.getElementById('enrollTeacherForm').reset();
-
-        alert("Teacher registered successfully!");
-      } catch (err) {
-        await secondaryAuth.signOut().catch(() => {});
-        alert("Error registering teacher: " + err.message);
-      }
-    });
-
-    async function deleteTeacher(uid) {
-      if (!auth.currentUser || currentUserRole !== 'admin') {
-        alert("Only the authorized administrator can delete teacher records.");
-        return;
-      }
-
-      if (confirm("Are you sure you want to delete this teacher account?")) {
-        try {
-          await db.collection('users').doc(uid).delete();
-        } catch (err) {
-          alert("Unable to delete teacher: " + err.message);
-        }
-      }
-    }
-
-    auth.onAuthStateChanged(async user => {
-      if (!user) return;
-
-      try {
-        currentUser = user;
-        await checkUserRole(user);
-      } catch (err) {
-        alert("Account verification failed: " + err.message);
-      }
-    });
-
-    document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      if (!auth.currentUser || currentUserRole !== 'teacher') {
-        alert("Only a signed-in teacher can change this password.");
-        return;
-      }
-
-      const newPassword = document.getElementById('newPasswordInput').value;
-
-      if (newPassword.length < 6) {
-        alert("Password must contain at least 6 characters.");
-        return;
-      }
-
-      try {
-        await auth.currentUser.updatePassword(newPassword);
-        document.getElementById('changePasswordForm').reset();
-        alert("Password updated successfully.");
-      } catch (err) {
-        alert("Unable to update password: " + err.message);
-      }
-    });
-  </script>
+    </script>
 </body>
 </html>
