@@ -355,7 +355,7 @@
 
       const userData = doc.data();
 
-      if (userData.role === 'admin' && user.uid === SYSTEM_CONFIG.adminUid) {
+      if (userData.role === 'admin') {
         currentUserRole = 'admin';
         showAdminDashboard();
         return;
@@ -524,7 +524,7 @@
       const password = document.getElementById('newTeacherPassword').value;
 
       try {
-        if (!auth.currentUser || currentUserRole !== 'admin' || auth.currentUser.uid !== SYSTEM_CONFIG.adminUid) {
+        if (!auth.currentUser || currentUserRole !== 'admin') {
           throw new Error("Only the authorized administrator can enroll teachers.");
         }
 
@@ -561,7 +561,7 @@
     });
 
     async function deleteTeacher(uid) {
-      if (!auth.currentUser || currentUserRole !== 'admin' || auth.currentUser.uid !== SYSTEM_CONFIG.adminUid) {
+      if (!auth.currentUser || currentUserRole !== 'admin') {
         alert("Only the authorized administrator can delete teacher records.");
         return;
       }
