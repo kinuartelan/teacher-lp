@@ -998,54 +998,56 @@ async function getAccountByUsername(username) {
         .get();
 
     if (snapshot.empty) {
-        return null;
+        throw new Error("Username 'admin' was not found in the users collection.");
     }
 
-    const document = snapshot.docs[0];
+    const account = snapshot.docs[0].data();
 
-    return {
-        uid: document.id,
-        ...document.data()
-    };
+    if (account.role !== "admin" && normalizedUsername === "admin") {
+        throw new Error("The admin username is not assigned the admin role.");
+    }
+
+    if (!account.email) {
+        throw new Error("The admin account is missing its email field in Firestore.");
+    }
+
+    return account;
 }
-
 
 document.getElementById("loginForm").addEventListener("submit", async function(e) {
     e.preventDefault();
 
-    const username = document.getElementById("loginUsername").value.trim();
+    const username = document.getElementById("loginUsername").value.trim().toLowerCase();
     const password = document.getElementById("loginPassword").value;
-
-    const loginButton = document.getElementById("loginButton");
+    const button = document.getElementById("loginButton");
 
     hideMessage("loginError");
 
-    if (!username || !password) {
-        showMessage("loginError", "Enter your username and password.");
-        return;
-    }
-
-    loginButton.disabled = true;
-    loginButton.textContent = "Signing in...";
+    button.disabled = true;
+    button.textContent = "Signing in...";
 
     try {
         const account = await getAccountByUsername(username);
 
-        if (!account) {
-            throw new Error("Username not found. Please check your username.");
-        }
-
-        if (!account.email) {
-            throw new Error("This account has no login email configured.");
-        }
-
-        await auth.signInWithEmailAndPassword(account.email, password);
+        await auth.signInWithEmailAndPassword(
+            account.email.trim(),
+            password
+        );
 
     } catch (error) {
-        showMessage("loginError", error.message || "Unable to sign in.");
+        let message = error.message;
+
+        if (error.code === "auth/invalid-credential" ||
+            error.code === "auth/wrong-password" ||
+            error.code === "auth/user-not-found") {
+            message = "Firebase rejected the login credentials. Verify the admin email in Firestore matches the existing Authentication account, then reset its password if necessary.";
+        }
+
+        showMessage("loginError", message);
+
     } finally {
-        loginButton.disabled = false;
-        loginButton.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i> Sign In';
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i> Sign In';
     }
 });
 
