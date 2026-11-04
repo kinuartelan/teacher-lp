@@ -230,13 +230,19 @@ const SYSTEM_CONFIG = {
   driveFolderId: "1GjvBq1MVRfP7NgGjxW73xDifh4rLC9sm"
 };
 
-    firebase.initializeApp(CONFIG.firebase);
+firebase.initializeApp(SYSTEM_CONFIG.firebase);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    function usernameToEmail(username) {
-      return username.trim().toLowerCase() + "@kinuartelan.portal";
-    }
+   function usernameToEmail(username) {
+  const value = username.trim().toLowerCase();
+
+  if (value.includes('@')) {
+    return value;
+  }
+
+  return value + "@kinuartelan.portal";
+}
 
     auth.onAuthStateChanged(async (user) => {
       if (user) {
