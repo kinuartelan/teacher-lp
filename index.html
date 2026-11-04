@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -33,14 +34,14 @@
 
       <form id="loginForm" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Email / Account ID</label>
-          <input type="email" id="loginEmail" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="teacher@school.edu">
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Username</label>
+          <input type="text" id="loginUsername" required autocomplete="username" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="admin">
         </div>
-        <div>
+        <div id="passwordField">
           <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Password</label>
-          <input type="password" id="loginPassword" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="••••••••">
+          <input type="password" id="loginPassword" autocomplete="current-password" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-indigo-500" placeholder="••••••••">
         </div>
-        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 font-semibold py-2.5 rounded-lg transition shadow-lg shadow-indigo-600/30">
+        <button type="submit" id="loginButton" class="w-full bg-indigo-600 hover:bg-indigo-500 font-semibold py-2.5 rounded-lg transition shadow-lg shadow-indigo-600/30">
           Sign In
         </button>
       </form>
@@ -245,19 +246,38 @@
         appId: "1:15751107458:web:73f6a5a40777947d7d759b"
       },
       vapidKey: "BImLCvphJWxUKeSxtGuf9YrcDJPRFRg8cr-jxjkIVHcFTeFhKx2c5ReQ6hibccb8KwIWkWCFwlTF6QRDZxUOPYM",
-      driveFolderId: "1GjvBq1MVRfP7NgGjxW73xDifh4rLC9sm"
+      driveFolderId: "1GjvBq1MVRfP7NgGjxW73xDifh4rLC9sm",
+      adminUid: "LqtM4Hz1nRVkCcrq9GcWak5BNyU2"
     };
 
     firebase.initializeApp(SYSTEM_CONFIG.firebase);
 
     const auth = firebase.auth();
     const db = firebase.firestore();
+    const googleProvider = new firebase.auth.GoogleAuthProvider();
 
     const secondaryApp = firebase.initializeApp(SYSTEM_CONFIG.firebase, "Secondary");
     const secondaryAuth = secondaryApp.auth();
 
     let currentUser = null;
     let currentUserRole = null;
+
+    const loginUsername = document.getElementById('loginUsername');
+    const loginPassword = document.getElementById('loginPassword');
+    const passwordField = document.getElementById('passwordField');
+    const loginButton = document.getElementById('loginButton');
+
+    loginUsername.addEventListener('input', () => {
+      const isAdmin = loginUsername.value.trim().toLowerCase() === 'admin';
+
+      passwordField.classList.toggle('hidden', isAdmin);
+      loginPassword.required = !isAdmin;
+      loginPassword.value = '';
+
+      loginButton.innerHTML = isAdmin
+        ? '<i class="fa-brands fa-google mr-2"></i> Sign In as Admin'
+        : 'Sign In';
+    });
 
     function updateTimers() {
       const now = new Date();
@@ -304,42 +324,121 @@
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const email = document.getElementById('loginEmail').value;
-      const password = document.getElementById('loginPassword').value;
+      const username = loginUsername.value.trim();
+      loginButton.disabled = true;
+      loginButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Signing In';
 
       try {
-        const res = await auth.signInWithEmailAndPassword(email, password);
-        currentUser = res.user;
-        await checkUserRole(currentUser);
+        if (username.toLowerCase() === 'admin') {
+          const result = await auth.signInWithPopup(googleProvider);
+          currentUser = result.user;
+
+          if (currentUser.uid !== SYSTEM_CONFIG.adminUid) {
+            await auth.signOut();
+            currentUser = null;
+            throw new Error("This Google account is not authorized as the portal administrator.");
+          }
+
+          await checkUserRole(currentUser);
+        } else {
+          const password = loginPassword.value;
+
+          if (!password) {
+            throw new Error("Enter your assigned password.");
+          }
+
+          const result = await auth.signInWithEmailAndPassword(username, password);
+          currentUser = result.user;
+          await checkUserRole(currentUser);
+        }
       } catch (err) {
-        alert("Login failed: " + err.message);
+        alert("Login failed: " + (err.message || err));
+      } finally {
+        loginButton.disabled = false;
+        loginButton.innerHTML = loginUsername.value.trim().toLowerCase() === 'admin'
+          ? '<i class="fa-brands fa-google mr-2"></i> Sign In as Admin'
+          : 'Sign In';
       }
     });
 
     async function checkUserRole(user) {
       const doc = await db.collection('users').doc(user.uid).get();
 
-      if (doc.exists && doc.data().role === 'admin') {
+      if (!doc.exists) {
+        await auth.signOut();
+        currentUser = null;
+        currentUserRole = null;
+        throw new Error("Your account does not have an assigned portal profile.");
+      }
+
+      const userData = doc.data();
+
+      if (userData.role === 'admin' && user.uid === SYSTEM_CONFIG.adminUid) {
         currentUserRole = 'admin';
         showAdminDashboard();
-      } else {
-        currentUserRole = 'teacher';
-        showTeacherDashboard(user);
+        return;
       }
+
+      if (userData.role === 'teacher') {
+        currentUserRole = 'teacher';
+        showTeacherDashboard(user, userData);
+        return;
+      }
+
+      await auth.signOut();
+      currentUser = null;
+      currentUserRole = null;
+      throw new Error("Your account does not have permission to access this portal.");
     }
 
     function showAdminDashboard() {
       document.getElementById('loginView').classList.add('hidden');
       document.getElementById('teacherDashboard').classList.add('hidden');
       document.getElementById('adminDashboard').classList.remove('hidden');
+
+      document.getElementById('authHeaderState').innerHTML = `
+        <span class="text-sm text-slate-300">Administrator</span>
+        <button id="logoutButton" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg">Sign Out</button>
+      `;
+
+      document.getElementById('logoutButton').addEventListener('click', signOutUser);
       loadAdminData();
     }
 
-    function showTeacherDashboard(user) {
+    function showTeacherDashboard(user, userData) {
       document.getElementById('loginView').classList.add('hidden');
       document.getElementById('adminDashboard').classList.add('hidden');
       document.getElementById('teacherDashboard').classList.remove('hidden');
+
+      document.getElementById('teacherWelcome').textContent = `Welcome Back, ${userData.name || user.email || 'Teacher'}`;
+
+      document.getElementById('authHeaderState').innerHTML = `
+        <span class="text-sm text-slate-300">${userData.name || user.email || 'Teacher'}</span>
+        <button id="logoutButton" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded-lg">Sign Out</button>
+      `;
+
+      document.getElementById('logoutButton').addEventListener('click', signOutUser);
       loadTeacherSubmissions(user.uid);
+    }
+
+    async function signOutUser() {
+      try {
+        await auth.signOut();
+        currentUser = null;
+        currentUserRole = null;
+
+        document.getElementById('adminDashboard').classList.add('hidden');
+        document.getElementById('teacherDashboard').classList.add('hidden');
+        document.getElementById('loginView').classList.remove('hidden');
+        document.getElementById('authHeaderState').innerHTML = '';
+
+        document.getElementById('loginForm').reset();
+        passwordField.classList.remove('hidden');
+        loginPassword.required = true;
+        loginButton.innerHTML = 'Sign In';
+      } catch (err) {
+        alert("Unable to sign out: " + err.message);
+      }
     }
 
     async function loadTeacherSubmissions(uid) {
@@ -360,6 +459,8 @@
             document.getElementById('refStatusBadge').className = `px-3 py-1 text-xs font-bold rounded-full ${data.reflection.status === 'SUBMITTED' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`;
           }
         }
+      }, error => {
+        alert("Unable to load submissions: " + error.message);
       });
     }
 
@@ -373,18 +474,52 @@
         snapshot.forEach(doc => {
           const teacher = doc.data();
 
-          tbody.innerHTML += `
-            <tr>
-              <td class="p-3 font-medium text-white">${teacher.name || teacher.email}</td>
-              <td class="p-3"><span class="px-2 py-1 bg-slate-800 rounded text-xs border border-slate-700">Pending</span></td>
-              <td class="p-3"><span class="px-2 py-1 bg-slate-800 rounded text-xs border border-slate-700">Locked</span></td>
-              <td class="p-3"><a href="https://drive.google.com/drive/folders/${SYSTEM_CONFIG.driveFolderId}" target="_blank" class="text-indigo-400 hover:underline text-xs"><i class="fa-solid fa-folder-open mr-1"></i> Drive Folder</a></td>
-              <td class="p-3 text-xs text-slate-400">Not Viewed</td>
-              <td class="p-3 text-right">
-                <button onclick="deleteTeacher('${doc.id}')" class="text-red-400 hover:text-red-300 text-xs"><i class="fa-solid fa-trash"></i></button>
-              </td>
-            </tr>
-          `;
+          const row = document.createElement('tr');
+
+          const nameCell = document.createElement('td');
+          nameCell.className = 'p-3 font-medium text-white';
+          nameCell.textContent = teacher.name || teacher.email || '';
+
+          const lessonCell = document.createElement('td');
+          lessonCell.className = 'p-3';
+          lessonCell.innerHTML = '<span class="px-2 py-1 bg-slate-800 rounded text-xs border border-slate-700">Pending</span>';
+
+          const reflectionCell = document.createElement('td');
+          reflectionCell.className = 'p-3';
+          reflectionCell.innerHTML = '<span class="px-2 py-1 bg-slate-800 rounded text-xs border border-slate-700">Locked</span>';
+
+          const driveCell = document.createElement('td');
+          driveCell.className = 'p-3';
+          const driveLink = document.createElement('a');
+          driveLink.href = `https://drive.google.com/drive/folders/${SYSTEM_CONFIG.driveFolderId}`;
+          driveLink.target = '_blank';
+          driveLink.rel = 'noopener noreferrer';
+          driveLink.className = 'text-indigo-400 hover:underline text-xs';
+          driveLink.innerHTML = '<i class="fa-solid fa-folder-open mr-1"></i> Drive Folder';
+          driveCell.appendChild(driveLink);
+
+          const reviewCell = document.createElement('td');
+          reviewCell.className = 'p-3 text-xs text-slate-400';
+          reviewCell.textContent = 'Not Viewed';
+
+          const actionCell = document.createElement('td');
+          actionCell.className = 'p-3 text-right';
+
+          const deleteButton = document.createElement('button');
+          deleteButton.className = 'text-red-400 hover:text-red-300 text-xs';
+          deleteButton.innerHTML = '<i class="fa-solid fa-trash"></i>';
+          deleteButton.addEventListener('click', () => deleteTeacher(doc.id));
+
+          actionCell.appendChild(deleteButton);
+
+          row.appendChild(nameCell);
+          row.appendChild(lessonCell);
+          row.appendChild(reflectionCell);
+          row.appendChild(driveCell);
+          row.appendChild(reviewCell);
+          row.appendChild(actionCell);
+
+          tbody.appendChild(row);
         });
       }, error => {
         alert("Unable to load teacher records: " + error.message);
@@ -407,14 +542,14 @@
       const password = document.getElementById('newTeacherPassword').value;
 
       try {
-        if (!auth.currentUser) {
-          throw new Error("Admin session is not active. Please sign in again.");
+        if (!auth.currentUser || currentUserRole !== 'admin' || auth.currentUser.uid !== SYSTEM_CONFIG.adminUid) {
+          throw new Error("Only the authorized administrator can enroll teachers.");
         }
 
         const adminDoc = await db.collection('users').doc(auth.currentUser.uid).get();
 
         if (!adminDoc.exists || adminDoc.data().role !== 'admin') {
-          throw new Error("Only an administrator can enroll teachers.");
+          throw new Error("Administrator profile verification failed.");
         }
 
         const cred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
@@ -444,8 +579,8 @@
     });
 
     async function deleteTeacher(uid) {
-      if (!auth.currentUser || currentUserRole !== 'admin') {
-        alert("Only an administrator can delete teacher records.");
+      if (!auth.currentUser || currentUserRole !== 'admin' || auth.currentUser.uid !== SYSTEM_CONFIG.adminUid) {
+        alert("Only the authorized administrator can delete teacher records.");
         return;
       }
 
@@ -457,6 +592,41 @@
         }
       }
     }
+
+    auth.onAuthStateChanged(async user => {
+      if (!user) return;
+
+      try {
+        currentUser = user;
+        await checkUserRole(user);
+      } catch (err) {
+        alert("Account verification failed: " + err.message);
+      }
+    });
+
+    document.getElementById('changePasswordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!auth.currentUser || currentUserRole !== 'teacher') {
+        alert("Only a signed-in teacher can change this password.");
+        return;
+      }
+
+      const newPassword = document.getElementById('newPasswordInput').value;
+
+      if (newPassword.length < 6) {
+        alert("Password must contain at least 6 characters.");
+        return;
+      }
+
+      try {
+        await auth.currentUser.updatePassword(newPassword);
+        document.getElementById('changePasswordForm').reset();
+        alert("Password updated successfully.");
+      } catch (err) {
+        alert("Unable to update password: " + err.message);
+      }
+    });
   </script>
 </body>
 </html>
