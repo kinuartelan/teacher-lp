@@ -232,7 +232,6 @@
                             <div id="refSavedSummary" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2">
                                 <div class="flex justify-between items-center">
                                     <span class="font-semibold text-slate-700">Recorded Reflections This Week:</span>
-                                    <!-- Ang link na ito ay naka-hide para sa teacher at para sa admin lang visible kung kinakailangan -->
                                     <a id="refExcelLink" href="#" target="_blank" class="hidden text-purple-600 font-semibold underline">Open Excel File</a>
                                 </div>
                                 <div id="refDaysBadges" class="flex flex-wrap gap-1.5 pt-1"></div>
@@ -486,6 +485,35 @@
 
     </main>
 
+    <!-- Edit Teacher Modal -->
+    <div id="editTeacherModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 relative">
+            <button onclick="closeEditTeacherModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="font-bold text-slate-800 text-lg mb-4">Edit Teacher Details</h3>
+            <form id="editTeacherForm" onsubmit="handleUpdateTeacher(event)" class="space-y-3">
+                <input type="hidden" id="editTeacherId">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
+                    <input type="text" id="editTeacherName" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Grade Level / Subject</label>
+                    <input type="text" id="editTeacherSubject" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Username (Read-only)</label>
+                    <input type="text" id="editTeacherUsername" disabled class="w-full px-3 py-2 border border-slate-200 bg-slate-100 rounded-lg text-sm text-slate-500 outline-none cursor-not-allowed">
+                </div>
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeEditTeacherModal()" class="px-4 py-2 bg-slate-100 text-slate-600 text-xs font-semibold rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-sky-600 text-white text-xs font-semibold rounded-lg shadow">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="reflectionModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl p-6 relative max-h-[85vh] flex flex-col">
             <button onclick="closeReflectionModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -498,7 +526,6 @@
             <div id="modalRefBody" class="overflow-y-auto space-y-4 pr-1 flex-1 text-sm">
             </div>
             <div class="flex justify-between items-center pt-4 mt-4 border-t border-slate-100">
-                <!-- Para sa admin modal open drive excel button -->
                 <a id="modalRefExcelBtn" href="#" target="_blank" class="hidden px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg">
                     <i class="fa-solid fa-file-excel mr-1"></i> Open Drive Excel File
                 </a>
@@ -902,7 +929,6 @@
                             refDaysBadges.appendChild(badge);
                         }
                     });
-                    // Laging naka-hide ang Open Excel File link para sa mga teacher
                     refExcelLink.classList.add('hidden');
                 } else {
                     refPill.innerText = "READY TO WRITE";
@@ -1505,7 +1531,7 @@
                             : `<span class="text-xs text-slate-400 italic">None recorded</span>`
                         }
                     </td>
-                    <td class="p-4">
+                    <td class="p-4 flex items-center space-x-2">
                         ${lp
                             ? (!isReviewed
                                 ? `<button onclick="acknowledgeRecord('${escapeHtml(rec.docId)}')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-lg text-xs font-semibold">Acknowledge</button>`
@@ -1513,6 +1539,9 @@
                               )
                             : `<span class="text-xs text-slate-400">--</span>`
                         }
+                        <button onclick="deleteSubmissionRecord('${escapeHtml(rec.docId)}', '${escapeHtml(rec.uid)}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-semibold transition" title="Delete Submission Record">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
                     </td>
                 `;
                 tableBody.appendChild(tr);
@@ -1527,6 +1556,22 @@
                 : `Showing ${startIndex + 1} to ${endIndex} of ${total} entries`;
             document.getElementById('adminPrevBtn').disabled = adminPage <= 1;
             document.getElementById('adminNextBtn').disabled = endIndex >= total;
+        }
+
+        async function deleteSubmissionRecord(docId, uid) {
+            if (!currentUser || currentUser.role !== "admin") return;
+            if (!confirm("Are you sure you want to delete this submission record from the portal?")) return;
+
+            try {
+                await Promise.all([
+                    db.collection('submission_history').doc(docId).delete().catch(() => {}),
+                    db.collection('submissions').doc(uid).delete().catch(() => {})
+                ]);
+                await loadAdminData();
+                showToast("Submission record deleted successfully.", "success");
+            } catch (error) {
+                showToast("Unable to delete submission: " + error.message, "error");
+            }
         }
 
         function renderAdminSlaTable() {
@@ -1612,7 +1657,6 @@
             }
 
             const excelBtn = document.getElementById('modalRefExcelBtn');
-            // Tanging ang Admin lamang ang pinapakitaan ng Open Drive Excel File button sa modal
             if (record.reflectionExcelUrl && currentUserRole === 'admin') {
                 excelBtn.href = record.reflectionExcelUrl;
                 excelBtn.classList.remove('hidden');
@@ -1776,7 +1820,10 @@
                     <td class="p-4 font-semibold text-slate-800">${escapeHtml(t.name)}</td>
                     <td class="p-4 text-slate-600">${escapeHtml(t.subject)}</td>
                     <td class="p-4 font-mono text-xs text-slate-600">${escapeHtml(t.username)}</td>
-                    <td class="p-4 text-right">
+                    <td class="p-4 text-right space-x-1">
+                        <button onclick="openEditTeacherModal('${t.id}')" class="px-2.5 py-1 text-xs bg-sky-50 hover:bg-sky-100 text-sky-600 rounded-lg font-medium transition">
+                            <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+                        </button>
                         <button onclick="deleteTeacher('${t.id}')" class="px-2.5 py-1 text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg font-medium transition">
                             <i class="fa-solid fa-trash-can mr-1"></i> Delete
                         </button>
@@ -1784,6 +1831,50 @@
                 `;
                 body.appendChild(tr);
             });
+        }
+
+        function openEditTeacherModal(id) {
+            const teacher = teachers.find(t => t.id === id);
+            if (!teacher) return;
+
+            document.getElementById('editTeacherId').value = teacher.id;
+            document.getElementById('editTeacherName').value = teacher.name || "";
+            document.getElementById('editTeacherSubject').value = teacher.subject || "";
+            document.getElementById('editTeacherUsername').value = teacher.username || "";
+
+            document.getElementById('editTeacherModal').classList.remove('hidden');
+        }
+
+        function closeEditTeacherModal() {
+            document.getElementById('editTeacherModal').classList.add('hidden');
+        }
+
+        async function handleUpdateTeacher(e) {
+            e.preventDefault();
+            if (!currentUser || currentUser.role !== "admin") return;
+
+            const id = document.getElementById('editTeacherId').value;
+            const name = document.getElementById('editTeacherName').value.trim();
+            const subject = document.getElementById('editTeacherSubject').value.trim();
+
+            if (!name || !subject) {
+                showToast("Please fill in all required fields.", "error");
+                return;
+            }
+
+            try {
+                await db.collection('users').doc(id).update({
+                    name: name,
+                    fullName: name,
+                    subject: subject
+                });
+
+                closeEditTeacherModal();
+                await loadAdminData();
+                showToast("Teacher details updated successfully!", "success");
+            } catch (error) {
+                showToast("Unable to update teacher: " + error.message, "error");
+            }
         }
 
         async function deleteTeacher(id) {
