@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduPlan Hub - Lesson Plan & Reflection System</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -52,7 +49,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
-    <!-- Top Navigation Bar -->
     <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
@@ -65,7 +61,6 @@
                 </div>
             </div>
 
-            <!-- Current Account -->
             <div class="flex items-center space-x-4">
                 <div id="authUserInfo" class="hidden sm:flex items-center space-x-2 text-sm bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">
                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
@@ -79,10 +74,8 @@
         </div>
     </header>
 
-    <!-- Main Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        <!-- Login Card (Displayed when not logged in) -->
         <section id="loginSection" class="max-w-md mx-auto my-12">
             <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
                 <div class="text-center mb-6">
@@ -98,7 +91,7 @@
                         <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Username / Email</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-user"></i></span>
-                            <input type="text" id="loginUsername" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm" placeholder="e.g. teacher.maria or admin">
+                            <input type="text" id="loginUsername" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm" placeholder="teacher.maria or admin">
                         </div>
                     </div>
                     <div>
@@ -115,11 +108,9 @@
             </div>
         </section>
 
-        <!-- Dynamic Portal Views (Hidden until authenticated) -->
         <div id="portalContent" class="hidden space-y-6">
 
-            <!-- System Weekly Clock & Info Banner -->
-            <div class="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 rounded-2xl text-white p-6 shadow-xl relative overflow-hidden">
+            <div id="timerContainer" class="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 rounded-2xl text-white p-6 shadow-xl relative overflow-hidden">
                 <div class="absolute right-0 top-0 bottom-0 opacity-10 flex items-center justify-center pr-10 pointer-events-none">
                     <i class="fa-solid fa-clock text-9xl"></i>
                 </div>
@@ -132,9 +123,7 @@
                         <p class="text-slate-400 text-xs mt-1" id="timeZoneInfo">Standard Time Zone (Local)</p>
                     </div>
 
-                    <!-- Live Countdown Timers Container -->
                     <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <!-- Lesson Plan Window Status -->
                         <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10">
                             <div class="flex justify-between items-center mb-1">
                                 <span class="text-xs font-medium text-slate-300"><i class="fa-solid fa-file-lines mr-1 text-sky-400"></i> Lesson Plan Window</span>
@@ -144,7 +133,6 @@
                             <p class="text-[11px] text-slate-400 mt-1" id="lpTimerSub">Time remaining for ON-TIME upload</p>
                         </div>
 
-                        <!-- Reflection Window Status -->
                         <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10">
                             <div class="flex justify-between items-center mb-1">
                                 <span class="text-xs font-medium text-slate-300"><i class="fa-solid fa-brain mr-1 text-purple-400"></i> Reflection Window</span>
@@ -157,10 +145,8 @@
                 </div>
             </div>
 
-            <!-- TEACHER DASHBOARD VIEW -->
             <div id="teacherDashboard" class="space-y-6 hidden">
 
-                <!-- Actions Header -->
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200">
                     <div>
                         <h2 class="text-lg font-bold text-slate-900">Weekly Upload Terminal</h2>
@@ -173,10 +159,8 @@
                     </div>
                 </div>
 
-                <!-- Teacher Upload Cards Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    <!-- CARD 1: LESSON PLAN UPLOAD -->
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                         <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                             <div class="flex items-center space-x-3">
@@ -194,14 +178,12 @@
                         </div>
 
                         <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
-                            <!-- Rule banner -->
                             <div class="bg-sky-50 border border-sky-100 rounded-xl p-3 text-xs text-sky-800 space-y-1">
                                 <p class="font-semibold"><i class="fa-solid fa-circle-info mr-1"></i> Schedule Rules:</p>
                                 <p>• <strong>On-Time:</strong> Monday 12:00 AM to 9:00 AM</p>
                                 <p>• <strong>Late:</strong> Monday 9:05 AM to Sunday 11:59 PM</p>
                             </div>
 
-                            <!-- Upload Form / Current Details -->
                             <div id="lpUploadContainer">
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Select Lesson Plan File</label>
                                 <input type="file" id="lpFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none mb-3">
@@ -211,7 +193,6 @@
                                 </button>
                             </div>
 
-                            <!-- Submission Receipt Info -->
                             <div id="lpReceiptCard" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2">
                                 <div class="flex justify-between items-center text-slate-600">
                                     <span>Submitted File:</span>
@@ -221,7 +202,6 @@
                                     <span>Timestamp:</span>
                                     <span id="lpReceiptTime" class="font-medium text-slate-700">--</span>
                                 </div>
-                                <!-- Admin View Tracking -->
                                 <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
                                     <span class="text-slate-500">Principal/Admin Status:</span>
                                     <span id="lpAdminAudit" class="font-semibold text-amber-600 flex items-center">
@@ -232,7 +212,6 @@
                         </div>
                     </div>
 
-                    <!-- CARD 2: REFLECTION UPLOAD -->
                     <div id="reflectionCard" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col opacity-60">
                         <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                             <div class="flex items-center space-x-3">
@@ -250,14 +229,12 @@
                         </div>
 
                         <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
-                            <!-- Rule banner -->
                             <div class="bg-purple-50 border border-purple-100 rounded-xl p-3 text-xs text-purple-800 space-y-1">
                                 <p class="font-semibold"><i class="fa-solid fa-circle-info mr-1"></i> Schedule Rules:</p>
                                 <p>• <strong>On-Time:</strong> Monday 09:05 AM to Tuesday 09:05 AM</p>
                                 <p>• <strong>Late:</strong> Tuesday 09:06 AM to Sunday 11:59 PM</p>
                             </div>
 
-                            <!-- Upload Form / Current Details -->
                             <div id="refUploadContainer" class="pointer-events-none">
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Select Reflection File</label>
                                 <input type="file" id="refFileInput" disabled accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none bg-slate-100 mb-3">
@@ -267,7 +244,6 @@
                                 </button>
                             </div>
 
-                            <!-- Submission Receipt Info -->
                             <div id="refReceiptCard" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2">
                                 <div class="flex justify-between items-center text-slate-600">
                                     <span>Submitted File:</span>
@@ -277,7 +253,6 @@
                                     <span>Timestamp:</span>
                                     <span id="refReceiptTime" class="font-medium text-slate-700">--</span>
                                 </div>
-                                <!-- Admin View Tracking -->
                                 <div class="pt-2 border-t border-slate-200 flex items-center justify-between">
                                     <span class="text-slate-500">Principal/Admin Status:</span>
                                     <span id="refAdminAudit" class="font-semibold text-amber-600 flex items-center">
@@ -291,10 +266,8 @@
                 </div>
             </div>
 
-            <!-- ADMIN DASHBOARD VIEW -->
             <div id="adminDashboard" class="space-y-6 hidden">
 
-                <!-- Admin Navigation Tabs -->
                 <div class="flex space-x-2 border-b border-slate-200 pb-2 overflow-x-auto">
                     <button onclick="switchAdminTab('overview')" id="tabBtnOverview" class="px-4 py-2 font-semibold text-sm rounded-xl bg-sky-600 text-white shadow">
                         <i class="fa-solid fa-chart-pie mr-2"></i> Dashboard & Metrics
@@ -307,9 +280,7 @@
                     </button>
                 </div>
 
-                <!-- TAB 1: OVERVIEW & SUBMISSION MASTER TABLE -->
                 <div id="adminTabOverview" class="space-y-6">
-                    <!-- Metrics Row -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
                             <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-xl flex items-center justify-center text-xl font-bold">
@@ -352,7 +323,6 @@
                         </div>
                     </div>
 
-                    <!-- Master Submissions Table -->
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-5 border-b border-slate-100 flex justify-between items-center">
                             <div>
@@ -376,17 +346,14 @@
                                     </tr>
                                 </thead>
                                 <tbody id="masterTableBody" class="divide-y divide-slate-100">
-                                    <!-- Dynamic rows inserted here -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 2: TEACHER ROSTER MANAGEMENT -->
                 <div id="adminTabTeachers" class="space-y-6 hidden">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <!-- Add Teacher Form -->
                         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
                             <h3 class="font-bold text-slate-800 text-base flex items-center">
                                 <i class="fa-solid fa-user-plus mr-2 text-sky-600"></i> Enroll New Teacher
@@ -394,15 +361,15 @@
                             <form id="enrollTeacherForm" onsubmit="handleEnrollTeacher(event)" class="space-y-3">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
-                                    <input type="text" id="enrollName" required placeholder="e.g. Maria Santos" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                                    <input type="text" id="enrollName" required placeholder="Maria Santos" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-600 mb-1">Grade Level / Subject</label>
-                                    <input type="text" id="enrollSubject" required placeholder="e.g. Grade 5 Science" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                                    <input type="text" id="enrollSubject" required placeholder="Grade 5 Science" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-600 mb-1">Assigned Username</label>
-                                    <input type="text" id="enrollUsername" required placeholder="e.g. msantos" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
+                                    <input type="text" id="enrollUsername" required placeholder="msantos" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-600 mb-1">Default Password</label>
@@ -414,7 +381,6 @@
                             </form>
                         </div>
 
-                        <!-- Teacher List -->
                         <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                             <div class="p-5 border-b border-slate-100">
                                 <h3 class="font-bold text-slate-800">Active Teacher Roster</h3>
@@ -431,7 +397,6 @@
                                         </tr>
                                     </thead>
                                     <tbody id="teacherRosterBody" class="divide-y divide-slate-100">
-                                        <!-- Dynamic roster -->
                                     </tbody>
                                 </table>
                             </div>
@@ -439,9 +404,7 @@
                     </div>
                 </div>
 
-                <!-- TAB 3: ADMIN PERFORMANCE TRACKER (SLA EVALUATION) -->
                 <div id="adminTabPerformance" class="space-y-6 hidden">
-                    <!-- Rule Banner -->
                     <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start space-x-4">
                         <div class="p-3 bg-amber-100 text-amber-700 rounded-xl">
                             <i class="fa-solid fa-clock-rotate-left text-2xl"></i>
@@ -454,7 +417,6 @@
                         </div>
                     </div>
 
-                    <!-- Performance Scorecard -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                             <p class="text-xs text-slate-500 font-semibold uppercase">Total Files Reviewed</p>
@@ -470,7 +432,6 @@
                         </div>
                     </div>
 
-                    <!-- Detailed SLA Audit Log Table -->
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-5 border-b border-slate-100">
                             <h3 class="font-bold text-slate-800">Admin Inspection Log & Compliance Audit</h3>
@@ -487,7 +448,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="adminSlaTableBody" class="divide-y divide-slate-100">
-                                    <!-- Dynamic SLA items -->
                                 </tbody>
                             </table>
                         </div>
@@ -500,7 +460,6 @@
 
     </main>
 
-    <!-- Password Modal -->
     <div id="passwordModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 relative">
             <button onclick="closePasswordModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
@@ -520,10 +479,8 @@
         </div>
     </div>
 
-    <!-- Notification Toast Container -->
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
 
-    <!-- Application Script Logic -->
     <script>
         const SYSTEM_CONFIG = {
             firebase: {
@@ -605,39 +562,77 @@
             return { now, monday, lpOnTimeEnd, refStart, refOnTimeEnd, sundayEnd };
         }
 
+        async function checkTimerVisibility() {
+            try {
+                const configDoc = await db.collection('settings').doc('portal_config').get();
+                const timerContainer = document.getElementById('timerContainer');
+                if (!timerContainer) return;
+
+                if (configDoc.exists) {
+                    const data = configDoc.data();
+                    const showTimer = data.showTimerForTeachers;
+                    if (currentUserRole === 'teacher' && !showTimer) {
+                        timerContainer.classList.add('hidden');
+                    } else {
+                        timerContainer.classList.remove('hidden');
+                    }
+                } else {
+                    if (currentUserRole === 'teacher') {
+                        timerContainer.classList.add('hidden');
+                    } else {
+                        timerContainer.classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
         function updateClocksAndTimers() {
             const { now, lpOnTimeEnd, refOnTimeEnd } = getWeeklyTimestamps();
-            document.getElementById('currentDateStr').innerText = now.toLocaleDateString('en-US', {
-                weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-            });
-            document.getElementById('currentWeekNum').innerText = getWeekIdentifier(now);
+            const dateStrEl = document.getElementById('currentDateStr');
+            const weekNumEl = document.getElementById('currentWeekNum');
+            if (dateStrEl) {
+                dateStrEl.innerText = now.toLocaleDateString('en-US', {
+                    weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+            }
+            if (weekNumEl) {
+                weekNumEl.innerText = getWeekIdentifier(now);
+            }
 
             const lpDiff = lpOnTimeEnd - now;
             const lpTimerEl = document.getElementById('lpTimerText');
-            if (lpDiff > 0) {
-                lpTimerEl.innerText = formatDuration(lpDiff);
-                lpTimerEl.className = "text-xl font-bold text-emerald-400 tracking-wider";
-                document.getElementById('lpTimerSub').innerText = "Remaining for ON-TIME submission";
-            } else {
-                lpTimerEl.innerText = "LATE WINDOW ACTIVE";
-                lpTimerEl.className = "text-lg font-bold text-amber-400 tracking-wider";
-                document.getElementById('lpTimerSub').innerText = "Submissions now marked LATE until Sunday 11:59 PM";
+            const lpTimerSub = document.getElementById('lpTimerSub');
+            if (lpTimerEl && lpTimerSub) {
+                if (lpDiff > 0) {
+                    lpTimerEl.innerText = formatDuration(lpDiff);
+                    lpTimerEl.className = "text-xl font-bold text-emerald-400 tracking-wider";
+                    lpTimerSub.innerText = "Remaining for ON-TIME submission";
+                } else {
+                    lpTimerEl.innerText = "LATE WINDOW ACTIVE";
+                    lpTimerEl.className = "text-lg font-bold text-amber-400 tracking-wider";
+                    lpTimerSub.innerText = "Submissions now marked LATE until Sunday 11:59 PM";
+                }
             }
 
             const refDiff = refOnTimeEnd - now;
             const refTimerEl = document.getElementById('refTimerText');
-            if (now < lpOnTimeEnd) {
-                refTimerEl.innerText = "Opens Mon 9:05 AM";
-                refTimerEl.className = "text-lg font-bold text-slate-300 tracking-wider";
-                document.getElementById('refTimerSub').innerText = "Requires Lesson Plan completion";
-            } else if (refDiff > 0) {
-                refTimerEl.innerText = formatDuration(refDiff);
-                refTimerEl.className = "text-xl font-bold text-purple-300 tracking-wider";
-                document.getElementById('refTimerSub').innerText = "Remaining for ON-TIME Reflection upload";
-            } else {
-                refTimerEl.innerText = "LATE WINDOW ACTIVE";
-                refTimerEl.className = "text-lg font-bold text-amber-400 tracking-wider";
-                document.getElementById('refTimerSub').innerText = "Submissions now marked LATE";
+            const refTimerSub = document.getElementById('refTimerSub');
+            if (refTimerEl && refTimerSub) {
+                if (now < lpOnTimeEnd) {
+                    refTimerEl.innerText = "Opens Mon 9:05 AM";
+                    refTimerEl.className = "text-lg font-bold text-slate-300 tracking-wider";
+                    refTimerSub.innerText = "Requires Lesson Plan completion";
+                } else if (refDiff > 0) {
+                    refTimerEl.innerText = formatDuration(refDiff);
+                    refTimerEl.className = "text-xl font-bold text-purple-300 tracking-wider";
+                    refTimerSub.innerText = "Remaining for ON-TIME Reflection upload";
+                } else {
+                    refTimerEl.innerText = "LATE WINDOW ACTIVE";
+                    refTimerEl.className = "text-lg font-bold text-amber-400 tracking-wider";
+                    refTimerSub.innerText = "Submissions now marked LATE";
+                }
             }
         }
 
@@ -668,7 +663,6 @@
                     : error.message, "error");
             }
         }
-
 
         async function checkUserRole(user) {
             try {
@@ -705,6 +699,7 @@
                 } else {
                     await loadTeacherSubmissions(user.uid);
                 }
+                await checkTimerVisibility();
             } catch (error) {
                 console.error(error);
                 showToast("Account verification failed: " + error.message, "error");
@@ -739,7 +734,6 @@
                 showToast(error.message, "error");
             }
         }
-
 
         async function loadTeacherSubmissions(uid) {
             const snap = await db.collection('submissions').doc(uid).get();
