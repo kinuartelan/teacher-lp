@@ -291,7 +291,7 @@
                         </div>
                         <div id="teacherRubricForm"></div>
                         <div class="flex flex-wrap gap-2 mt-4">
-                            <button id="saveTeacherRubricBtn" onclick="saveLessonRubric(false)" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-semibold">Save Rubric to Drive Excel</button>
+                            <button id="saveTeacherRubricBtn" onclick="saveLessonRubric(false)" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-semibold">Save Rubric</button>
                             <button onclick="downloadLessonRubricPdf(false)" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold"><i class="fa-solid fa-file-pdf mr-2"></i>Download PDF</button>
                         </div>
                         <p id="teacherRubricStatus" class="text-xs text-slate-500 mt-3"></p>
@@ -326,7 +326,7 @@
                         </div>
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"><div><h3 class="font-bold text-slate-800 text-lg">ANNEX A – LESSON PLANNING RUBRIC</h3><p id="adminRubricPersonLabel" class="text-xs text-slate-500">Select a teacher and week.</p></div><span id="adminRubricStatus" class="text-xs font-semibold text-slate-500"></span></div>
                         <div id="adminRubricForm"></div>
-                        <div class="flex flex-wrap gap-2 mt-4"><button id="saveAdminRubricBtn" onclick="saveLessonRubric(true)" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-semibold">Save Rubric to Drive Excel</button><button onclick="downloadLessonRubricPdf(true)" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold"><i class="fa-solid fa-file-pdf mr-2"></i>Download PDF</button></div>
+                        <div class="flex flex-wrap gap-2 mt-4"><button id="saveAdminRubricBtn" onclick="saveLessonRubric(true)" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-semibold">Save Rubric</button><button onclick="downloadLessonRubricPdf(true)" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold"><i class="fa-solid fa-file-pdf mr-2"></i>Download PDF</button></div>
                         <p class="text-xs text-slate-500 mt-3">Historical weeks are view-only. Current-week records can be updated until the next Monday.</p>
                     </div>
                 </div>
@@ -1002,7 +1002,7 @@
                 refTextInput.classList.remove('bg-slate-100');
                 submitRefBtn.disabled = false;
                 submitRefBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                submitRefBtn.innerText = "Save Reflection to Drive Excel";
+                submitRefBtn.innerText = "Save and Lock Reflection";
             }
         }
 
