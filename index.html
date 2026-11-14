@@ -2185,9 +2185,11 @@
                 const record = doc.exists ? doc.data() : null;
                 const person = teachers.find(t => t.id === uid) || (currentUser && currentUser.uid === uid ? currentUser : null);
                 document.getElementById('adminRubricPersonLabel').innerText = `${person ? person.name : 'Selected user'} • Week of ${weekKey}`;
-                const editable = rubricWeekIsCurrent(weekKey);
+                const editable = rubricWeekIsCurrent(weekKey) && uid === currentUser.uid;
                 document.getElementById('adminRubricForm').innerHTML = rubricFormMarkup(record, editable);
                 document.getElementById('adminRubricStatus').innerText = record && record.updatedAt ? `Last saved: ${new Date(record.updatedAt).toLocaleString()}` : 'No saved rubric';
+                if (uid !== currentUser.uid) document.getElementById('adminRubricStatus').innerText += ' • View only';
+                else if (!editable) document.getElementById('adminRubricStatus').innerText += ' • Historical week is view only';
                 document.getElementById('saveAdminRubricBtn').disabled = !editable;
                 document.getElementById('saveAdminRubricBtn').classList.toggle('opacity-50', !editable);
                 activeRubricRecord = record;
@@ -2207,7 +2209,10 @@
                 showToast('Only the current week can be edited. Previous weeks are kept as historical records.', 'error');
                 return;
             }
-            if (isAdmin && currentUser.role !== 'admin') return;
+            if (isAdmin && (currentUser.role !== 'admin' || uid !== currentUser.uid)) {
+                showToast('You can edit only your own rubric. Other teachers’ rubrics are view-only.', 'error');
+                return;
+            }
             try {
                 const person = teachers.find(t => t.id === uid) || (currentUser && currentUser.uid === uid ? currentUser : null);
                 const payload = getRubricPayloadFromForm(containerId);
@@ -2255,24 +2260,89 @@
             }
             const data = buildRubricPdfData(isAdmin);
             const pdf = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(14); pdf.text('ANNEX A - LESSON PLANNING RUBRIC', 148, 13, { align: 'center' });
-            pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.text(`Name: ${data.name}    Week of: ${data.weekKey}`, 12, 21);
-            const x = [12, 144, 160, 180, 285];
-            const top = 27; const rowH = 19;
-            pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8);
-            pdf.rect(x[0], top, x[4]-x[0], 12); pdf.text('I can say that in my lesson plan...', x[0]+2, top+7); pdf.text('Yes', x[1]+3, top+7); pdf.text('Not Yet', x[2]+2, top+7); pdf.text('Why? / What will make it better?', x[3]+2, top+7);
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 10;
+            const x = [margin, 145, 162, 181, pageWidth - margin];
+            const tableWidth = x[4] - x[0];
+            let y = 29;
+            const drawHeader = () => {
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(14);
+                pdf.text('ANNEX A - LESSON PLANNING RUBRIC', pageWidth / 2, 13, { align: 'center' });
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(9);
+                pdf.text(`Name: ${data.name}    Week of: ${data.weekKey}`, margin, 21);
+            };
+            const drawTableHead = () => {
+                const h = 11;
+                pdf.setFillColor(235, 240, 245);
+                pdf.rect(x[0], y, tableWidth, h, 'F');
+                pdf.rect(x[0], y, tableWidth, h);
+                [x[1], x[2], x[3]].forEach(xx => pdf.line(xx, y, xx, y + h));
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(7.5);
+                pdf.text('I can say that in my lesson plan...', x[0] + 2, y + 7);
+                pdf.text('Yes', x[1] + 3, y + 7);
+                pdf.text('Not Yet', x[2] + 2, y + 7);
+                pdf.text('Why? / What will make it better?', x[3] + 2, y + 7);
+                y += h;
+            };
+            drawHeader();
+            drawTableHead();
             LESSON_RUBRIC_ITEMS.forEach((item, i) => {
-                const y = top + 12 + i * rowH;
-                pdf.rect(x[0], y, x[4]-x[0], rowH); [x[1],x[2],x[3]].forEach(xx => pdf.line(xx,y,xx,y+rowH));
-                pdf.setFont('helvetica','normal'); pdf.setFontSize(7.5);
-                const lines = pdf.splitTextToSize(`${i+1}. ${item}`, 128); pdf.text(lines.slice(0,3), x[0]+2, y+5);
-                if (data.ratings[i] === 'Yes') pdf.text('X', x[1]+6, y+10);
-                if (data.ratings[i] === 'Not Yet') pdf.text('X', x[2]+5, y+10);
-                pdf.text(pdf.splitTextToSize(data.remarks[i] || '', 100).slice(0,4), x[3]+2, y+5);
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(7.2);
+                const itemLines = pdf.splitTextToSize(`${i + 1}. ${item}`, x[1] - x[0] - 4);
+                const remarkLines = pdf.splitTextToSize(data.remarks[i] || '', x[4] - x[3] - 4);
+                const rowHeight = Math.max(15, Math.max(itemLines.length, remarkLines.length, 1) * 3.5 + 7);
+                if (y + rowHeight > pageHeight - 12) {
+                    pdf.addPage();
+                    y = 15;
+                    drawTableHead();
+                }
+                pdf.rect(x[0], y, tableWidth, rowHeight);
+                [x[1], x[2], x[3]].forEach(xx => pdf.line(xx, y, xx, y + rowHeight));
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(7.2);
+                pdf.text(itemLines, x[0] + 2, y + 5);
+                if (data.ratings[i] === 'Yes') pdf.text('X', x[1] + 6, y + rowHeight / 2 + 1);
+                if (data.ratings[i] === 'Not Yet') pdf.text('X', x[2] + 5, y + rowHeight / 2 + 1);
+                if (remarkLines.length) pdf.text(remarkLines, x[3] + 2, y + 5);
+                y += rowHeight;
             });
-            const notesY = top + 12 + LESSON_RUBRIC_ITEMS.length * rowH + 5;
-            pdf.setFont('helvetica','bold'); pdf.setFontSize(9); pdf.text('Notes for my instructional coaching session:', 12, notesY);
-            pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.text(pdf.splitTextToSize(data.notes || '', 270).slice(0,4), 12, notesY+6);
+            const coachingHeading = 'Notes for my instructional coaching session:';
+            const noteLines = pdf.splitTextToSize(data.notes || 'No coaching notes entered.', pageWidth - margin * 2 - 4);
+            const noteLineHeight = 4;
+            const headingHeight = 8;
+            const notePadding = 5;
+            const maxContentHeight = pageHeight - margin * 2;
+            if (y + headingHeight + notePadding + noteLines.length * noteLineHeight > pageHeight - margin) {
+                pdf.addPage();
+                y = 15;
+            } else {
+                y += 5;
+            }
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(9);
+            pdf.text(coachingHeading, margin, y + 4);
+            y += headingHeight;
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(8);
+            let lineIndex = 0;
+            while (lineIndex < noteLines.length) {
+                const availableLines = Math.max(1, Math.floor((pageHeight - margin - y - notePadding) / noteLineHeight));
+                const chunk = noteLines.slice(lineIndex, lineIndex + availableLines);
+                const chunkHeight = chunk.length * noteLineHeight + notePadding * 2;
+                pdf.rect(margin, y, pageWidth - margin * 2, chunkHeight);
+                pdf.text(chunk, margin + 2, y + notePadding + 2);
+                y += chunkHeight;
+                lineIndex += chunk.length;
+                if (lineIndex < noteLines.length) {
+                    pdf.addPage();
+                    y = 15;
+                }
+            }
             const fileName = `Lesson_Plan_Rubric_${data.uid}_${data.weekKey}.pdf`;
             pdf.save(fileName);
             try {
@@ -2284,7 +2354,9 @@
                 if (!driveResponse.ok) throw new Error(`Google Drive upload failed (${driveResponse.status}).`);
                 const driveResult = await driveResponse.json();
                 if (!driveResult.success || !driveResult.fileUrl) throw new Error(driveResult.error || 'Google Drive did not confirm the PDF upload.');
-                await db.collection('lesson_plan_rubrics').doc(`${data.uid}_${data.weekKey}`).set({ pdfUrl: driveResult.fileUrl, pdfFileId: driveResult.fileId || null, pdfFileName: driveResult.fileName || fileName }, { merge: true });
+                if (!isAdmin || data.uid === currentUser.uid) {
+                    await db.collection('lesson_plan_rubrics').doc(`${data.uid}_${data.weekKey}`).set({ pdfUrl: driveResult.fileUrl, pdfFileId: driveResult.fileId || null, pdfFileName: driveResult.fileName || fileName }, { merge: true });
+                }
                 showToast('PDF downloaded and uploaded to Google Drive.', 'success');
             } catch (error) {
                 showToast('PDF downloaded. Google Drive upload was not confirmed: ' + error.message, 'error');
