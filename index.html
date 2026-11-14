@@ -2108,6 +2108,21 @@
             }
         });
 
+        async function rubricApiRequest(action, payload = {}) {
+            const user = auth.currentUser;
+            if (!user) throw new Error('Your session has expired. Please sign in again.');
+            const idToken = await user.getIdToken(true);
+            const response = await fetch(SYSTEM_CONFIG.driveUploadUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action, idToken, uid: currentUser.uid, ...payload })
+            });
+            if (!response.ok) throw new Error(`Google Sheets request failed (${response.status}).`);
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'Google Sheets did not confirm the request.');
+            return result;
+        }
+
         function rubricWeekIsCurrent(weekKey) {
             return weekKey === getWeekStorageKey();
         }
@@ -2151,8 +2166,8 @@
             if (!currentUser || currentUser.role !== 'teacher') return;
             try {
                 const weekKey = getWeekStorageKey();
-                const doc = await db.collection('lesson_plan_rubrics').doc(`${currentUser.uid}_${weekKey}`).get();
-                renderTeacherRubric(doc.exists ? doc.data() : null);
+                const result = await rubricApiRequest('loadRubric', { targetUid: currentUser.uid, weekKey });
+                renderTeacherRubric(result.record || null);
             } catch (error) {
                 showToast('Unable to load your lesson plan rubric: ' + error.message, 'error');
             }
@@ -2181,8 +2196,8 @@
                 return;
             }
             try {
-                const doc = await db.collection('lesson_plan_rubrics').doc(`${uid}_${weekKey}`).get();
-                const record = doc.exists ? doc.data() : null;
+                const result = await rubricApiRequest('loadRubric', { targetUid: uid, weekKey });
+                const record = result.record || null;
                 const person = teachers.find(t => t.id === uid) || (currentUser && currentUser.uid === uid ? currentUser : null);
                 document.getElementById('adminRubricPersonLabel').innerText = `${person ? person.name : 'Selected user'} • Week of ${weekKey}`;
                 const editable = rubricWeekIsCurrent(weekKey) && uid === currentUser.uid;
@@ -2229,7 +2244,8 @@
                     updatedBy: currentUser.uid,
                     updatedByName: currentUser.name
                 };
-                await db.collection('lesson_plan_rubrics').doc(`${uid}_${weekKey}`).set(record, { merge: true });
+                const result = await rubricApiRequest('saveRubric', { record });
+                record.spreadsheetUrl = result.spreadsheetUrl || '';
                 activeRubricRecord = record;
                 showToast('Lesson Plan Rubric saved successfully.', 'success');
                 if (isAdmin) await loadAdminSelectedRubric(); else await loadTeacherRubric();
@@ -2355,7 +2371,7 @@
                 const driveResult = await driveResponse.json();
                 if (!driveResult.success || !driveResult.fileUrl) throw new Error(driveResult.error || 'Google Drive did not confirm the PDF upload.');
                 if (!isAdmin || data.uid === currentUser.uid) {
-                    await db.collection('lesson_plan_rubrics').doc(`${data.uid}_${data.weekKey}`).set({ pdfUrl: driveResult.fileUrl, pdfFileId: driveResult.fileId || null, pdfFileName: driveResult.fileName || fileName }, { merge: true });
+                    await rubricApiRequest('updateRubricPdf', { targetUid: data.uid, weekKey: data.weekKey, pdfUrl: driveResult.fileUrl, pdfFileId: driveResult.fileId || '', pdfFileName: driveResult.fileName || fileName });
                 }
                 showToast('PDF downloaded and uploaded to Google Drive.', 'success');
             } catch (error) {
