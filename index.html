@@ -73,10 +73,10 @@
 
                 <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Username / Email</label>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Employee Code or Admin</label>
                         <div class="relative">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400"><i class="fa-solid fa-user"></i></span>
-                            <input type="text" id="loginUsername" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm" placeholder="teacher.maria or admin">
+                            <input type="text" id="loginUsername" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm" placeholder="Enter Employee Code or Admin">
                         </div>
                     </div>
                     <div>
@@ -145,6 +145,14 @@
                             <i class="fa-solid fa-key mr-2 text-slate-500"></i> Change Password
                         </button>
                     </div>
+                </div>
+
+                <div id="teacherWeekSelectorWrap" class="bg-white p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                        <label for="teacherWeekSelector" class="block text-xs font-bold uppercase text-slate-600 mb-1">Teaching Week</label>
+                        <p id="teacherWeekSelectorNote" class="text-xs text-slate-500">Select a week for lesson plan, rubric, and reflection submissions.</p>
+                    </div>
+                    <select id="teacherWeekSelector" onchange="changeTeacherWeek(this.value)" class="w-full sm:w-80 px-3 py-2 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 focus:ring-2 focus:ring-sky-500 outline-none"></select>
                 </div>
 
                 <div id="teacherTabUpload" class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -286,10 +294,55 @@
                 <div id="teacherTabRubrics" class="hidden space-y-5">
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-                            <div><h3 class="font-bold text-slate-800 text-lg">ANNEX A – LESSON PLANNING RUBRIC</h3><p class="text-xs text-slate-500">Complete and update your rubric during the current Monday-to-Sunday week.</p></div>
+                            <div><h3 class="font-bold text-slate-800 text-lg">ANNEX A – LESSON PLANNING RUBRIC</h3><p class="text-xs text-slate-500">Complete and update your rubric for the selected Monday-to-Sunday teaching week.</p></div>
                             <div class="text-xs font-semibold text-slate-600">Week of <span id="teacherRubricWeekLabel"></span></div>
                         </div>
-                        <div id="teacherRubricForm"></div>
+                        <div id="teacherRubricForm"><div class="overflow-x-auto"><table class="w-full border-collapse border border-slate-400"><thead><tr class="bg-slate-100 text-xs font-bold text-slate-800"><th class="p-3 text-left border border-slate-400">I can say that in my lesson plan...</th><th class="p-3 border border-slate-400">Yes</th><th class="p-3 border border-slate-400">Not Yet</th><th class="p-3 border border-slate-400">Why? / What will make it better?</th></tr></thead><tbody><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">1. Intentions are clearly stated, with appropriate learning competencies articulated.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating0" value="Yes" aria-label="Yes for item 1" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating0" value="Not Yet" aria-label="Not Yet for item 1" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="0" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">2. Intentions are evident across all sections. Thus, there is coherence.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating1" value="Yes" aria-label="Yes for item 2" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating1" value="Not Yet" aria-label="Not Yet for item 2" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="1" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">3. Learning experience is clear – another teacher can implement this lesson without additional explanation.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating2" value="Yes" aria-label="Yes for item 3" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating2" value="Not Yet" aria-label="Not Yet for item 3" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="2" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">4. Learning experience is well-designed, with intentionally embedded Learning Design Principles.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating3" value="Yes" aria-label="Yes for item 4" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating3" value="Not Yet" aria-label="Not Yet for item 4" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="3" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">5. Learning experience maximizes available opportunities for integration and contextualization.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating4" value="Yes" aria-label="Yes for item 5" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating4" value="Not Yet" aria-label="Not Yet for item 5" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="4" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">6. Learning experience is inclusive, provides opportunities to support learners with disabilities, barriers, and unique contexts.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating5" value="Yes" aria-label="Yes for item 6" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating5" value="Not Yet" aria-label="Not Yet for item 6" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="5" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">7. Assessment strategies are integrated throughout the session to see learners progress or if they need support.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating6" value="Yes" aria-label="Yes for item 7" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating6" value="Not Yet" aria-label="Not Yet for item 7" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="6" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">8. Assessment strategies generate evidence if learning is successful.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating7" value="Yes" aria-label="Yes for item 8" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating7" value="Not Yet" aria-label="Not Yet for item 8" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="7" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">9. Ways forward and described interventions are actionable, providing ways to extend or adjust learning based on reflections.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating8" value="Yes" aria-label="Yes for item 9" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating8" value="Not Yet" aria-label="Not Yet for item 9" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="8" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr></tbody></table></div><div class="mt-4"><label class="block text-sm font-bold text-slate-800 mb-2">Notes for my instructional coaching session:</label><textarea id="rubricCoachingNotes" rows="5" class="w-full border border-slate-300 rounded-lg p-3 text-sm resize-y" placeholder="Enter instructional coaching notes..."></textarea></div></div>
                         <div class="flex flex-wrap gap-2 mt-4">
                             <button id="saveTeacherRubricBtn" onclick="saveLessonRubric(false)" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-semibold">Save Rubric</button>
                             <button onclick="downloadLessonRubricPdf(false)" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold"><i class="fa-solid fa-file-pdf mr-2"></i>Download PDF</button>
@@ -325,7 +378,52 @@
                             <div class="flex items-end"><button onclick="loadAdminSelectedRubric()" class="w-full px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold">Load Rubric</button></div>
                         </div>
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4"><div><h3 class="font-bold text-slate-800 text-lg">ANNEX A – LESSON PLANNING RUBRIC</h3><p id="adminRubricPersonLabel" class="text-xs text-slate-500">Select a teacher and week.</p></div><span id="adminRubricStatus" class="text-xs font-semibold text-slate-500"></span></div>
-                        <div id="adminRubricForm"></div>
+                        <div id="adminRubricForm"><div class="overflow-x-auto"><table class="w-full border-collapse border border-slate-400"><thead><tr class="bg-slate-100 text-xs font-bold text-slate-800"><th class="p-3 text-left border border-slate-400">I can say that in my lesson plan...</th><th class="p-3 border border-slate-400">Yes</th><th class="p-3 border border-slate-400">Not Yet</th><th class="p-3 border border-slate-400">Why? / What will make it better?</th></tr></thead><tbody><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">1. Intentions are clearly stated, with appropriate learning competencies articulated.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating0" value="Yes" aria-label="Yes for item 1" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating0" value="Not Yet" aria-label="Not Yet for item 1" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="0" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">2. Intentions are evident across all sections. Thus, there is coherence.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating1" value="Yes" aria-label="Yes for item 2" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating1" value="Not Yet" aria-label="Not Yet for item 2" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="1" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">3. Learning experience is clear – another teacher can implement this lesson without additional explanation.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating2" value="Yes" aria-label="Yes for item 3" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating2" value="Not Yet" aria-label="Not Yet for item 3" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="2" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">4. Learning experience is well-designed, with intentionally embedded Learning Design Principles.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating3" value="Yes" aria-label="Yes for item 4" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating3" value="Not Yet" aria-label="Not Yet for item 4" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="3" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">5. Learning experience maximizes available opportunities for integration and contextualization.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating4" value="Yes" aria-label="Yes for item 5" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating4" value="Not Yet" aria-label="Not Yet for item 5" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="4" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">6. Learning experience is inclusive, provides opportunities to support learners with disabilities, barriers, and unique contexts.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating5" value="Yes" aria-label="Yes for item 6" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating5" value="Not Yet" aria-label="Not Yet for item 6" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="5" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">7. Assessment strategies are integrated throughout the session to see learners progress or if they need support.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating6" value="Yes" aria-label="Yes for item 7" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating6" value="Not Yet" aria-label="Not Yet for item 7" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="6" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">8. Assessment strategies generate evidence if learning is successful.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating7" value="Yes" aria-label="Yes for item 8" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating7" value="Not Yet" aria-label="Not Yet for item 8" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="7" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr><tr class="border-b border-slate-300">
+<td class="p-3 text-sm font-medium text-slate-800">9. Ways forward and described interventions are actionable, providing ways to extend or adjust learning based on reflections.</td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating8" value="Yes" aria-label="Yes for item 9" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-3 text-center"><input type="radio" name="rubricRating8" value="Not Yet" aria-label="Not Yet for item 9" class="h-4 w-4 accent-sky-600"></td>
+<td class="p-2"><textarea data-rubric-remark="8" rows="3" class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?"></textarea></td>
+</tr></tbody></table></div><div class="mt-4"><label class="block text-sm font-bold text-slate-800 mb-2">Notes for my instructional coaching session:</label><textarea id="rubricCoachingNotes" rows="5" class="w-full border border-slate-300 rounded-lg p-3 text-sm resize-y" placeholder="Enter instructional coaching notes..."></textarea></div></div>
                         <div class="flex flex-wrap gap-2 mt-4"><button id="saveAdminRubricBtn" onclick="saveLessonRubric(true)" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-semibold">Save Rubric</button><button onclick="downloadLessonRubricPdf(true)" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold"><i class="fa-solid fa-file-pdf mr-2"></i>Download PDF</button></div>
                         <p class="text-xs text-slate-500 mt-3">Historical weeks are view-only. Current-week records can be updated until the next Monday.</p>
                     </div>
@@ -427,7 +525,7 @@
                                     <input type="text" id="enrollSubject" required placeholder="Grade 5 Science" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Assigned Username</label>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Employee Code</label>
                                     <input type="text" id="enrollUsername" required placeholder="msantos" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
                                 </div>
                                 <div>
@@ -451,7 +549,7 @@
                                         <tr class="bg-slate-50 text-slate-500 font-semibold text-xs uppercase border-b border-slate-200">
                                             <th class="p-4">Teacher</th>
                                             <th class="p-4">Subject</th>
-                                            <th class="p-4">Username</th>
+                                            <th class="p-4">Employee Code</th>
                                             <th class="p-4 text-right">Actions</th>
                                         </tr>
                                     </thead>
@@ -537,7 +635,7 @@
                     <input type="text" id="editTeacherSubject" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Username (Read-only)</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Employee Code (Read-only)</label>
                     <input type="text" id="editTeacherUsername" disabled class="w-full px-3 py-2 border border-slate-200 bg-slate-100 rounded-lg text-sm text-slate-500 outline-none cursor-not-allowed">
                 </div>
                 <div class="pt-2 flex justify-end space-x-2">
@@ -602,7 +700,7 @@
             adminEmail: "kinuartelansupply@gmail.com",
             adminUid: "LqtM4Hz1nRVkCcrq9GcWak5BNyU2",
             teacherEmailDomain: "school-lesson-plan-porta-c8ff2.firebaseapp.com",
-            driveUploadUrl: "https://script.google.com/macros/s/AKfycbz3i5ZCERZ8TTxzMlirpYcTZKVqyv1IJ6F68bu8l6hFodQfISJuX8uGAbMM9-GxDVhI/exec"
+            driveUploadUrl: "https://script.google.com/macros/s/AKfycbzw_FEh2TN56SjLYQq6CGAuJQr8SP84-feBaXFmeoU0N6G9KBRzGX-h0GWON9TQFmSg/exec"
         };
 
         const app = firebase.initializeApp(SYSTEM_CONFIG.firebase);
@@ -623,6 +721,7 @@
             "Assessment strategies generate evidence if learning is successful.",
             "Ways forward and described interventions are actionable, providing ways to extend or adjust learning based on reflections."
         ];
+        let selectedTeacherWeekKey = null;
         let activeRubricRecord = null;
         let activeRubricUid = null;
         let activeRubricWeek = null;
@@ -664,6 +763,82 @@
             monday.setDate(d.getDate() + diffToMon);
             monday.setHours(0, 0, 0, 0);
             return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
+        }
+
+        function getTeacherWeekKey() {
+            return selectedTeacherWeekKey || getWeekStorageKey();
+        }
+
+        function getWeekDateFromKey(weekKey) {
+            const parts = String(weekKey || '').split('-').map(Number);
+            return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
+        }
+
+        function getAllowedTeacherWeekKeys() {
+            const currentMonday = getWeekDateFromKey(getWeekStorageKey());
+            const keys = [];
+            for (let offset = -4; offset <= 1; offset++) {
+                const date = new Date(currentMonday);
+                date.setDate(date.getDate() + offset * 7);
+                keys.push(getWeekStorageKey(date));
+            }
+            return keys;
+        }
+
+        function isTeacherWeekAllowed(weekKey) {
+            return getAllowedTeacherWeekKeys().includes(String(weekKey || ''));
+        }
+
+        function populateTeacherWeekSelector() {
+            const select = document.getElementById('teacherWeekSelector');
+            if (!select) return;
+            const currentKey = getWeekStorageKey();
+            const allowed = getAllowedTeacherWeekKeys();
+            if (!selectedTeacherWeekKey || !allowed.includes(selectedTeacherWeekKey)) selectedTeacherWeekKey = currentKey;
+            select.innerHTML = '';
+            allowed.forEach((weekKey, index) => {
+                const offset = index - 4;
+                let label = `Week of ${weekKey}`;
+                if (offset === 0) label += ' — Current Week';
+                else if (offset < 0) label += ` — ${Math.abs(offset)} week${Math.abs(offset) === 1 ? '' : 's'} ago`;
+                else label += ' — Advance Submission';
+                select.add(new Option(label, weekKey));
+            });
+            select.value = selectedTeacherWeekKey;
+            updateTeacherWeekNote();
+        }
+
+        function updateTeacherWeekNote() {
+            const note = document.getElementById('teacherWeekSelectorNote');
+            if (!note) return;
+            const selected = getTeacherWeekKey();
+            const current = getWeekStorageKey();
+            if (selected < current) note.textContent = `You are submitting for a previous teaching week (${selected}). This will be recorded as a late submission.`;
+            else if (selected > current) note.textContent = `You are submitting one week ahead (${selected}). This will be recorded as an advance submission.`;
+            else note.textContent = `Current teaching week: ${selected}. Regular submission deadlines apply.`;
+        }
+
+        async function changeTeacherWeek(weekKey) {
+            if (!isTeacherWeekAllowed(weekKey)) {
+                showToast('You can select only the previous four weeks, current week, or next week.', 'error');
+                populateTeacherWeekSelector();
+                return;
+            }
+            selectedTeacherWeekKey = weekKey;
+            updateTeacherWeekNote();
+            renderTeacherDashboard();
+            const rubricTab = document.getElementById('teacherTabRubrics');
+            if (rubricTab && !rubricTab.classList.contains('hidden')) await loadTeacherRubric();
+        }
+
+        function getSubmissionTiming(weekKey, submittedAt = new Date()) {
+            const currentKey = getWeekStorageKey(submittedAt);
+            if (weekKey < currentKey) return 'LATE SUBMISSION';
+            if (weekKey > currentKey) return 'ADVANCE SUBMISSION';
+            const monday = getWeekDateFromKey(weekKey);
+            const lessonDeadline = new Date(monday);
+            lessonDeadline.setHours(9, 0, 0, 0);
+            return submittedAt <= lessonDeadline ? 'ON TIME' : 'LATE SUBMISSION';
         }
 
         function getLocalDateString(isoString) {
@@ -746,7 +921,7 @@
             const username = normalizeUsername(document.getElementById('loginUsername').value);
             const password = document.getElementById('loginPassword').value;
             if (!username || !password) {
-                showToast("Enter your username and password.", "error");
+                showToast("Enter your Employee Code or Admin and password.", "error");
                 return;
             }
 
@@ -756,7 +931,7 @@
                 await auth.signInWithEmailAndPassword(email, password);
             } catch (error) {
                 showToast(error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-credential"
-                    ? "Invalid username or password."
+                    ? "Invalid Employee Code or password."
                     : error.message, "error");
             }
         }
@@ -794,6 +969,7 @@
                 if (data.role === "admin") {
                     await loadAdminData();
                 } else {
+                    selectedTeacherWeekKey = getWeekStorageKey();
                     await loadTeacherData(user.uid);
                 }
                 await checkTimerVisibility();
@@ -866,6 +1042,8 @@
             }
 
             teacherHistoryRecords = Object.values(recordsMap).sort((a, b) => (b.weekKey || "").localeCompare(a.weekKey || ""));
+            if (!selectedTeacherWeekKey || !isTeacherWeekAllowed(selectedTeacherWeekKey)) selectedTeacherWeekKey = currentWeekKey;
+            populateTeacherWeekSelector();
             filteredTeacherHistory = [...teacherHistoryRecords];
             teacherHistoryPage = 1;
 
@@ -874,8 +1052,8 @@
         }
 
         function getCurrentTeacherWeekRecord() {
-            const currentWeekKey = getWeekStorageKey();
-            return teacherHistoryRecords.find(r => r.weekKey === currentWeekKey) || null;
+            const selectedWeekKey = getTeacherWeekKey();
+            return teacherHistoryRecords.find(r => r.weekKey === selectedWeekKey) || null;
         }
 
         function switchTeacherTab(tab) {
@@ -895,6 +1073,7 @@
         function renderTeacherDashboard() {
             if (!currentUser || currentUser.role !== 'teacher') return;
 
+            populateTeacherWeekSelector();
             const record = getCurrentTeacherWeekRecord();
             const lp = record ? record.lessonPlan : null;
             const reflections = (record && record.reflections) ? record.reflections : {};
@@ -1002,7 +1181,7 @@
                 refTextInput.classList.remove('bg-slate-100');
                 submitRefBtn.disabled = false;
                 submitRefBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                submitRefBtn.innerText = "Save and Lock Reflection";
+                submitRefBtn.innerText = "Save Reflection to Drive Excel";
             }
         }
 
@@ -1049,7 +1228,7 @@
                     reader.onerror = () => reject(new Error('Unable to read the selected file.'));
                     reader.readAsDataURL(selectedFile);
                 });
-                const weekKey = getWeekStorageKey();
+                const weekKey = getTeacherWeekKey();
                 const driveResponse = await fetch(SYSTEM_CONFIG.driveUploadUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1079,6 +1258,7 @@
                     fileSize: selectedFile.size,
                     fileType: selectedFile.type || '',
                     status: 'SUBMITTED',
+                    submissionTiming: getSubmissionTiming(weekKey, new Date(nowIso)),
                     timestamp: nowIso,
                     dateStr: getLocalDateString(nowIso),
                     adminReviewed: false,
@@ -1093,6 +1273,7 @@
                     username: currentUser.username,
                     subject: currentUser.subject,
                     weekKey: weekKey,
+                    submissionTiming: getSubmissionTiming(weekKey, new Date(nowIso)),
                     dateStr: getLocalDateString(nowIso),
                     lessonPlan: submission,
                     adminReviewed: false,
@@ -1168,66 +1349,6 @@
 </Workbook>`;
         }
 
-        function buildRubricExcelXml(teacherName, subject, weekKey, ratings, remarks, coachingNotes) {
-            let rowsXml = `
-                <Row>
-                    <Cell><Data ss:Type="String">Teacher Name</Data></Cell>
-                    <Cell><Data ss:Type="String">Subject</Data></Cell>
-                    <Cell><Data ss:Type="String">Week Start</Data></Cell>
-                    <Cell><Data ss:Type="String">Item #</Data></Cell>
-                    <Cell><Data ss:Type="String">Rubric Criteria</Data></Cell>
-                    <Cell><Data ss:Type="String">Rating (Yes / Not Yet)</Data></Cell>
-                    <Cell><Data ss:Type="String">Remarks (Why? / What will make it better?)</Data></Cell>
-                </Row>
-            `;
-
-            LESSON_RUBRIC_ITEMS.forEach((item, index) => {
-                const cleanItem = String(item).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                const cleanRemark = String(remarks[index] || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                const rating = ratings[index] || '';
-                const cleanName = String(teacherName || '').replace(/&/g, '&amp;');
-                const cleanSubj = String(subject || '').replace(/&/g, '&amp;');
-
-                rowsXml += `
-                    <Row>
-                        <Cell><Data ss:Type="String">${cleanName}</Data></Cell>
-                        <Cell><Data ss:Type="String">${cleanSubj}</Data></Cell>
-                        <Cell><Data ss:Type="String">${weekKey}</Data></Cell>
-                        <Cell><Data ss:Type="Number">${index + 1}</Data></Cell>
-                        <Cell><Data ss:Type="String">${cleanItem}</Data></Cell>
-                        <Cell><Data ss:Type="String">${rating}</Data></Cell>
-                        <Cell><Data ss:Type="String">${cleanRemark}</Data></Cell>
-                    </Row>
-                `;
-            });
-
-            const cleanNotes = String(coachingNotes || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            rowsXml += `
-                <Row>
-                    <Cell><Data ss:Type="String">${String(teacherName || '').replace(/&/g, '&amp;')}</Data></Cell>
-                    <Cell><Data ss:Type="String">${String(subject || '').replace(/&/g, '&amp;')}</Data></Cell>
-                    <Cell><Data ss:Type="String">${weekKey}</Data></Cell>
-                    <Cell><Data ss:Type="String">Coaching Notes</Data></Cell>
-                    <Cell><Data ss:Type="String">Notes for my instructional coaching session</Data></Cell>
-                    <Cell><Data ss:Type="String">-</Data></Cell>
-                    <Cell><Data ss:Type="String">${cleanNotes}</Data></Cell>
-                </Row>
-            `;
-
-            return `<?xml version="1.0"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
- <Worksheet ss:Name="Lesson Plan Rubric">
-  <Table>
-   ${rowsXml}
-  </Table>
- </Worksheet>
-</Workbook>`;
-        }
-
         async function submitReflectionText() {
             if (!currentUser || currentUser.role !== "teacher") return;
             const currentRecord = getCurrentTeacherWeekRecord();
@@ -1256,7 +1377,7 @@
             submitButton.innerText = "Saving to Drive Excel...";
 
             try {
-                const weekKey = getWeekStorageKey();
+                const weekKey = getTeacherWeekKey();
                 const nowIso = new Date().toISOString();
                 const updatedReflections = { ...reflections };
                 updatedReflections[selectedDay] = {
@@ -1302,6 +1423,7 @@
                     username: currentUser.username,
                     subject: currentUser.subject,
                     weekKey: weekKey,
+                    submissionTiming: getSubmissionTiming(weekKey, new Date(nowIso)),
                     reflections: updatedReflections,
                     reflectionExcelUrl: excelFileUrl,
                     reflectionExcelId: excelFileId,
@@ -2078,46 +2200,32 @@
             }
         });
 
-        function rubricWeekIsCurrent(weekKey) {
-            return weekKey === getWeekStorageKey();
+        async function rubricApiRequest(action, payload = {}) {
+            const user = auth.currentUser;
+            if (!user) throw new Error('Your session has expired. Please sign in again.');
+            const idToken = await user.getIdToken(true);
+            const response = await fetch(SYSTEM_CONFIG.driveUploadUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action, idToken, uid: currentUser.uid, ...payload })
+            });
+            if (!response.ok) throw new Error(`Google Sheets request failed (${response.status}).`);
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'Google Sheets did not confirm the request.');
+            return result;
         }
 
-        function rubricFormMarkup(editable) {
-            const safe = value => escapeHtml(String(value || ''));
-            let rows = LESSON_RUBRIC_ITEMS.map((item, index) => `
-                <tr class="border-b border-slate-300">
-                    <td class="p-3 text-sm font-medium text-slate-900">${index + 1}. ${safe(item)}</td>
-                    <td class="p-3 text-center">
-                        <input type="radio" name="rubricRating${index}" value="Yes" ${editable ? '' : 'disabled'} class="w-4 h-4 text-sky-600 accent-sky-600 cursor-pointer">
-                    </td>
-                    <td class="p-3 text-center">
-                        <input type="radio" name="rubricRating${index}" value="Not Yet" ${editable ? '' : 'disabled'} class="w-4 h-4 text-sky-600 accent-sky-600 cursor-pointer">
-                    </td>
-                    <td class="p-2">
-                        <textarea data-rubric-remark="${index}" rows="2" ${editable ? '' : 'disabled'} class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs text-slate-900 bg-white placeholder-slate-400 focus:ring-2 focus:ring-sky-500 outline-none resize-y" placeholder="Why? / What will make it better?"></textarea>
-                    </td>
-                </tr>
-            `).join('');
+        function rubricWeekIsCurrent(weekKey) {
+            return isTeacherWeekAllowed(weekKey);
+        }
 
-            return `
-                <div class="overflow-x-auto">
-                    <table class="w-full border-collapse border border-slate-400 bg-white">
-                        <thead>
-                            <tr class="bg-slate-100 text-xs font-bold text-slate-900">
-                                <th class="p-3 text-left border border-slate-400">I can say that in my lesson plan...</th>
-                                <th class="p-3 border border-slate-400">Yes</th>
-                                <th class="p-3 border border-slate-400">Not Yet</th>
-                                <th class="p-3 border border-slate-400">Why? / What will make it better?</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
-                <div class="mt-4">
-                    <label class="block text-sm font-bold text-slate-900 mb-2">Notes for my instructional coaching session:</label>
-                    <textarea id="rubricCoachingNotes" rows="5" ${editable ? '' : 'disabled'} class="w-full border border-slate-300 rounded-lg p-3 text-sm text-slate-900 bg-white placeholder-slate-400 focus:ring-2 focus:ring-sky-500 outline-none resize-y" placeholder="Enter instructional coaching notes..."></textarea>
-                </div>
-            `;
+        function rubricFormMarkup(record, editable) {
+            const ratings = record && Array.isArray(record.ratings) ? record.ratings : [];
+            const remarks = record && Array.isArray(record.remarks) ? record.remarks : [];
+            const notes = record && record.coachingNotes ? record.coachingNotes : '';
+            const safe = value => escapeHtml(String(value || ''));
+            let rows = LESSON_RUBRIC_ITEMS.map((item, index) => `<tr class="border-b border-slate-300"><td class="p-3 text-sm font-medium text-slate-800">${index + 1}. ${safe(item)}</td><td class="p-3 text-center"><input type="radio" name="rubricRating${index}" value="Yes" ${ratings[index] === 'Yes' ? 'checked' : ''} ${editable ? '' : 'disabled'}></td><td class="p-3 text-center"><input type="radio" name="rubricRating${index}" value="Not Yet" ${ratings[index] === 'Not Yet' ? 'checked' : ''} ${editable ? '' : 'disabled'}></td><td class="p-2"><textarea data-rubric-remark="${index}" rows="2" ${editable ? '' : 'disabled'} class="w-full min-w-40 p-2 border border-slate-300 rounded text-xs resize-y" placeholder="Why? / What will make it better?">${safe(remarks[index])}</textarea></td></tr>`).join('');
+            return `<div class="overflow-x-auto"><table class="w-full border-collapse border border-slate-400"><thead><tr class="bg-slate-100 text-xs font-bold text-slate-800"><th class="p-3 text-left border border-slate-400">I can say that in my lesson plan...</th><th class="p-3 border border-slate-400">Yes</th><th class="p-3 border border-slate-400">Not Yet</th><th class="p-3 border border-slate-400">Why? / What will make it better?</th></tr></thead><tbody>${rows}</tbody></table></div><div class="mt-4"><label class="block text-sm font-bold text-slate-800 mb-2">Notes for my instructional coaching session:</label><textarea id="rubricCoachingNotes" rows="5" ${editable ? '' : 'disabled'} class="w-full border border-slate-300 rounded-lg p-3 text-sm resize-y" placeholder="Enter instructional coaching notes...">${safe(notes)}</textarea></div>`;
         }
 
         function getRubricPayloadFromForm(containerId) {
@@ -2135,18 +2243,26 @@
             return { ratings, remarks, coachingNotes: notes };
         }
 
-        function renderTeacherRubric() {
-            const weekKey = getWeekStorageKey();
+        function renderTeacherRubric(record) {
+            const weekKey = getTeacherWeekKey();
             document.getElementById('teacherRubricWeekLabel').innerText = weekKey;
-            document.getElementById('teacherRubricForm').innerHTML = rubricFormMarkup(true);
-            document.getElementById('teacherRubricStatus').innerText = 'Complete your rubric and click Save to send directly to Google Drive Excel.';
+            document.getElementById('teacherRubricForm').innerHTML = rubricFormMarkup(record, true);
+            document.getElementById('teacherRubricStatus').innerText = record && record.updatedAt ? `Last saved: ${new Date(record.updatedAt).toLocaleString()}` : 'No rubric saved for this week yet.';
+            activeRubricRecord = record || null;
             activeRubricUid = currentUser.uid;
             activeRubricWeek = weekKey;
+            activeRubricIsAdmin = false;
         }
 
         async function loadTeacherRubric() {
             if (!currentUser || currentUser.role !== 'teacher') return;
-            renderTeacherRubric();
+            try {
+                const weekKey = getTeacherWeekKey();
+                const result = await rubricApiRequest('loadRubric', { targetUid: currentUser.uid, weekKey });
+                renderTeacherRubric(result.record || null);
+            } catch (error) {
+                showToast('Unable to load your lesson plan rubric: ' + error.message, 'error');
+            }
         }
 
         function initializeAdminRubricFilters() {
@@ -2171,82 +2287,62 @@
                 showToast('Please select the Monday starting date of the week.', 'error');
                 return;
             }
-            const person = teachers.find(t => t.id === uid) || (currentUser && currentUser.uid === uid ? currentUser : null);
-            document.getElementById('adminRubricPersonLabel').innerText = `${person ? person.name : 'Selected user'} • Week of ${weekKey}`;
-            const editable = rubricWeekIsCurrent(weekKey) && uid === currentUser.uid;
-            document.getElementById('adminRubricForm').innerHTML = rubricFormMarkup(editable);
-            document.getElementById('adminRubricStatus').innerText = editable ? 'Current week editable form.' : 'Historical week (Direct Excel generation on Drive).';
-            document.getElementById('saveAdminRubricBtn').disabled = !editable;
-            document.getElementById('saveAdminRubricBtn').classList.toggle('opacity-50', !editable);
-            activeRubricUid = uid;
-            activeRubricWeek = weekKey;
+            try {
+                const result = await rubricApiRequest('loadRubric', { targetUid: uid, weekKey });
+                const record = result.record || null;
+                const person = teachers.find(t => t.id === uid) || (currentUser && currentUser.uid === uid ? currentUser : null);
+                document.getElementById('adminRubricPersonLabel').innerText = `${person ? person.name : 'Selected user'} • Week of ${weekKey}`;
+                const editable = rubricWeekIsCurrent(weekKey) && uid === currentUser.uid;
+                document.getElementById('adminRubricForm').innerHTML = rubricFormMarkup(record, editable);
+                document.getElementById('adminRubricStatus').innerText = record && record.updatedAt ? `Last saved: ${new Date(record.updatedAt).toLocaleString()}` : 'No saved rubric';
+                if (uid !== currentUser.uid) document.getElementById('adminRubricStatus').innerText += ' • View only';
+                else if (!editable) document.getElementById('adminRubricStatus').innerText += ' • Historical week is view only';
+                document.getElementById('saveAdminRubricBtn').disabled = !editable;
+                document.getElementById('saveAdminRubricBtn').classList.toggle('opacity-50', !editable);
+                activeRubricRecord = record;
+                activeRubricUid = uid;
+                activeRubricWeek = weekKey;
+                activeRubricIsAdmin = true;
+            } catch (error) {
+                showToast('Unable to load rubric: ' + error.message, 'error');
+            }
         }
 
         async function saveLessonRubric(isAdmin) {
             const uid = isAdmin ? activeRubricUid : currentUser.uid;
-            const weekKey = isAdmin ? activeRubricWeek : getWeekStorageKey();
+            const weekKey = isAdmin ? activeRubricWeek : getTeacherWeekKey();
             const containerId = isAdmin ? 'adminRubricForm' : 'teacherRubricForm';
-            
             if (!uid || !weekKey || !rubricWeekIsCurrent(weekKey)) {
-                showToast('Only the current week can be edited.', 'error');
+                showToast('You can edit rubrics only for the previous four weeks, current week, or next week.', 'error');
                 return;
             }
             if (isAdmin && (currentUser.role !== 'admin' || uid !== currentUser.uid)) {
-                showToast('You can edit only your own rubric.', 'error');
+                showToast('You can edit only your own rubric. Other teachers’ rubrics are view-only.', 'error');
                 return;
             }
-
-            const saveBtn = document.getElementById(isAdmin ? 'saveAdminRubricBtn' : 'saveTeacherRubricBtn');
-            if (saveBtn) {
-                saveBtn.disabled = true;
-                saveBtn.innerText = "Saving to Google Drive Excel...";
-            }
-
             try {
                 const person = teachers.find(t => t.id === uid) || (currentUser && currentUser.uid === uid ? currentUser : null);
                 const payload = getRubricPayloadFromForm(containerId);
-                
-                const excelXml = buildRubricExcelXml(
-                    person ? person.name : 'Teacher', 
-                    person ? person.subject : '', 
-                    weekKey, 
-                    payload.ratings, 
-                    payload.remarks, 
-                    payload.coachingNotes
-                );
-                const base64Excel = btoa(unescape(encodeURIComponent(excelXml)));
-                const excelFileName = `Rubric_${person ? person.username : 'teacher'}_${weekKey}.xls`;
-
-                const driveResponse = await fetch(SYSTEM_CONFIG.driveUploadUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({
-                        fileName: excelFileName,
-                        fileData: base64Excel,
-                        mimeType: 'application/vnd.ms-excel',
-                        username: person ? person.username : 'teacher',
-                        teacherName: person ? person.name : 'Teacher',
-                        submissionType: 'rubricExcel',
-                        week: weekKey
-                    })
-                });
-
-                if (!driveResponse.ok) {
-                    throw new Error(`Google Drive upload failed (${driveResponse.status}).`);
-                }
-                const driveResult = await driveResponse.json();
-                if (!driveResult.success || !driveResult.fileUrl) {
-                    throw new Error(driveResult.error || 'Google Drive did not confirm the upload.');
-                }
-
-                showToast('Lesson Plan Rubric successfully saved to Google Drive Excel!', 'success');
+                const record = {
+                    uid,
+                    teacherName: person ? person.name : 'Unknown User',
+                    subject: person ? person.subject || '' : '',
+                    username: person ? person.username || '' : '',
+                    weekKey,
+                    ratings: payload.ratings,
+                    remarks: payload.remarks,
+                    coachingNotes: payload.coachingNotes,
+                    updatedAt: new Date().toISOString(),
+                    updatedBy: currentUser.uid,
+                    updatedByName: currentUser.name
+                };
+                const result = await rubricApiRequest('saveRubric', { record });
+                record.spreadsheetUrl = result.spreadsheetUrl || '';
+                activeRubricRecord = record;
+                showToast('Lesson Plan Rubric saved successfully.', 'success');
+                if (isAdmin) await loadAdminSelectedRubric(); else await loadTeacherRubric();
             } catch (error) {
-                showToast('Unable to save rubric to Drive: ' + error.message, 'error');
-            } finally {
-                if (saveBtn) {
-                    saveBtn.disabled = false;
-                    saveBtn.innerText = "Save Rubric to Drive Excel";
-                }
+                showToast('Unable to save rubric: ' + error.message, 'error');
             }
         }
 
@@ -2260,14 +2356,14 @@
             const remarks = LESSON_RUBRIC_ITEMS.map((_, index) => root.querySelector(`[data-rubric-remark="${index}"]`).value.trim());
             const notes = root.querySelector('#rubricCoachingNotes').value.trim();
             const uid = isAdmin ? activeRubricUid : currentUser.uid;
-            const weekKey = isAdmin ? activeRubricWeek : getWeekStorageKey();
+            const weekKey = isAdmin ? activeRubricWeek : getTeacherWeekKey();
             const person = teachers.find(t => t.id === uid) || (currentUser && currentUser.uid === uid ? currentUser : null);
             return { ratings, remarks, notes, uid, weekKey, name: person ? person.name : 'Teacher' };
         }
 
         async function downloadLessonRubricPdf(isAdmin) {
             if (!window.jspdf || !window.jspdf.jsPDF) {
-                showToast('PDF generator is unavailable.', 'error');
+                showToast('PDF generator is unavailable. Please reload the portal while connected to the internet.', 'error');
                 return;
             }
             const data = buildRubricPdfData(isAdmin);
@@ -2328,6 +2424,7 @@
             const noteLineHeight = 4;
             const headingHeight = 8;
             const notePadding = 5;
+            const maxContentHeight = pageHeight - margin * 2;
             if (y + headingHeight + notePadding + noteLines.length * noteLineHeight > pageHeight - margin) {
                 pdf.addPage();
                 y = 15;
@@ -2360,14 +2457,17 @@
                 const base64Pdf = pdf.output('datauristring').split(',')[1];
                 const driveResponse = await fetch(SYSTEM_CONFIG.driveUploadUrl, {
                     method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ fileName, fileData: base64Pdf, mimeType: 'application/pdf', username: currentUser.username || 'admin', teacherName: data.name, submissionType: 'rubricPdf', week: data.weekKey })
+                    body: JSON.stringify({ fileName, fileData: base64Pdf, mimeType: 'application/pdf', username: currentUser.username || 'admin', teacherName: data.name, submissionType: 'rubric', week: data.weekKey })
                 });
                 if (!driveResponse.ok) throw new Error(`Google Drive upload failed (${driveResponse.status}).`);
                 const driveResult = await driveResponse.json();
                 if (!driveResult.success || !driveResult.fileUrl) throw new Error(driveResult.error || 'Google Drive did not confirm the PDF upload.');
+                if (!isAdmin || data.uid === currentUser.uid) {
+                    await rubricApiRequest('updateRubricPdf', { targetUid: data.uid, weekKey: data.weekKey, pdfUrl: driveResult.fileUrl, pdfFileId: driveResult.fileId || '', pdfFileName: driveResult.fileName || fileName });
+                }
                 showToast('PDF downloaded and uploaded to Google Drive.', 'success');
             } catch (error) {
-                showToast('PDF downloaded. Google Drive upload error: ' + error.message, 'error');
+                showToast('PDF downloaded. Google Drive upload was not confirmed: ' + error.message, 'error');
             }
         }
 
