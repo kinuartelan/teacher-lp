@@ -1897,27 +1897,43 @@
             document.getElementById('reflectionModal').classList.add('hidden');
         }
 async function saveReflectionComment(docId, planId, day) {
-            if (!currentUser || currentUser.role !== 'admin') return;
+            if (!currentUser || currentUser.role !== 'admin') {
+                showToast("Only the Principal/Admin can save comments.", "error");
+                return;
+            }
+
             const record = allSubmissionRecords.find(r => r.docId === docId);
-            if (!record) return;
+            if (!record) {
+                showToast("Submission record not found.", "error");
+                return;
+            }
 
             const textarea = document.getElementById(`commentInput_${planId}_${day}`);
-            if (!textarea) return;
+            if (!textarea) {
+                showToast("Comment field not found.", "error");
+                return;
+            }
+
             const commentText = textarea.value.trim();
             const nowIso = new Date().toISOString();
 
             try {
                 const updatedReflections = JSON.parse(JSON.stringify(record.reflections || {}));
-                if (planId === 'legacy' && updatedReflections[day]) {
-                    updatedReflections[day].adminComment = commentText;
-                    updatedReflections[day].adminCommentTime = nowIso;
+                let reflectionEntry = null;
+
+                if ((planId === 'legacy' || String(planId).startsWith('legacy-')) && updatedReflections[day]) {
+                    reflectionEntry = updatedReflections[day];
                 } else if (updatedReflections[planId] && updatedReflections[planId][day]) {
-                    updatedReflections[planId][day].adminComment = commentText;
-                    updatedReflections[planId][day].adminCommentTime = nowIso;
-                } else {
+                    reflectionEntry = updatedReflections[planId][day];
+                }
+
+                if (!reflectionEntry || typeof reflectionEntry !== 'object') {
                     showToast("Reflection entry not found.", "error");
                     return;
                 }
+
+                reflectionEntry.adminComment = commentText;
+                reflectionEntry.adminCommentTime = commentText ? nowIso : null;
 
                 await db.collection('submission_history').doc(docId).set({
                     reflections: updatedReflections
@@ -1931,10 +1947,14 @@ async function saveReflectionComment(docId, planId, day) {
                 }
 
                 record.reflections = updatedReflections;
-                showToast(`Comment saved for ${day} reflection!`, "success");
+
+                const teacherRecord = teacherHistoryRecords.find(r => r.docId === docId);
+                if (teacherRecord) teacherRecord.reflections = updatedReflections;
+
+                showToast("Principal/Admin comment saved successfully.", "success");
                 openReflectionModal(docId, 'admin');
             } catch (error) {
-                console.error(error);
+                console.error("Comment saving error:", error);
                 showToast("Unable to save comment: " + error.message, "error");
             }
         }
