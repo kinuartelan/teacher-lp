@@ -1657,12 +1657,20 @@
             const currentWeekKey = getWeekStorageKey();
             const currentWeekRecords = allSubmissionRecords.filter(r => r.weekKey === currentWeekKey);
             const totalTeachersCount = teachers.length;
-            const successfulLpCount = currentWeekRecords.reduce((sum, r) => sum + getTeacherLessonPlans(r).length, 0);
-            const successfulRefCount = currentWeekRecords.filter(r => r.reflections && Object.keys(r.reflections).length > 0).length;
+            const successfulLpCount = currentWeekRecords.reduce((sum, record) => sum + getTeacherLessonPlans(record).length, 0);
+            const lessonPlanDenominator = Math.max(totalTeachersCount, successfulLpCount);
+            const totalUploadedLessonPlans = currentWeekRecords.reduce((sum, record) => sum + getTeacherLessonPlans(record).length, 0);
+            const successfulRefCount = currentWeekRecords.reduce((sum, record) => {
+                const plans = getTeacherLessonPlans(record);
+                return sum + plans.filter(plan => {
+                    const planReflections = getPlanReflections(record, plan.id);
+                    return Object.keys(planReflections).some(day => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(day) && planReflections[day]);
+                }).length;
+            }, 0);
 
             document.getElementById('statTotalTeachers').innerText = totalTeachersCount;
-            document.getElementById('statSuccessfulLp').innerText = `${successfulLpCount} / ${totalTeachersCount}`;
-            document.getElementById('statSuccessfulRef').innerText = `${successfulRefCount} / ${totalTeachersCount}`;
+            document.getElementById('statSuccessfulLp').innerText = `${successfulLpCount} / ${lessonPlanDenominator}`;
+            document.getElementById('statSuccessfulRef').innerText = `${successfulRefCount} / ${totalUploadedLessonPlans}`;
 
             const tableBody = document.getElementById('masterTableBody');
             if (!tableBody) return;
