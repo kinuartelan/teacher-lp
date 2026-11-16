@@ -175,8 +175,8 @@
 
                         <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
                             <div id="lpUploadContainer">
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Lesson plan for...</label>
-                                <input type="text" id="lpTitleInput" maxlength="120" placeholder="Example: English 5 - Section A" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none mb-3">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Subject Name (Lesson Plan Title)</label>
+                                <input type="text" id="lpTitleInput" maxlength="120" placeholder="Example: English 5" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none mb-3">
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Select Lesson Plan File</label>
                                 <input type="file" id="lpFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none mb-3">
                                 <p class="text-xs text-slate-400 mb-3" id="lpSelectedFile">No file selected. Maximum file size: 10 MB.</p>
@@ -708,7 +708,7 @@
             adminEmail: "kinuartelansupply@gmail.com",
             adminUid: "LqtM4Hz1nRVkCcrq9GcWak5BNyU2",
             teacherEmailDomain: "school-lesson-plan-porta-c8ff2.firebaseapp.com",
-            driveUploadUrl: "https://script.google.com/macros/s/AKfycbzO-JXnq251eTKparO0pc54w1uLoRCXigEwDfMFl5v-TZJB1bHWCZaF_jVrN3MnkT4U/exec"
+            driveUploadUrl: "https://script.google.com/macros/s/AKfycbzw838HBxDw81kjwGNi0YBrS2kTuwq12q1mhqmBrOz07zOjn-Lg-1Pax3ZatYqkYKz3/exec"
         };
 
         const app = firebase.initializeApp(SYSTEM_CONFIG.firebase);
@@ -980,6 +980,7 @@
                 } else {
                     selectedTeacherWeekKey = getWeekStorageKey();
                     await loadTeacherData(user.uid);
+                    await promptForMissingLessonPlanTitles(user.uid);
                 }
                 await checkTimerVisibility();
             } catch (error) {
@@ -1086,7 +1087,7 @@
             if (!plans.length && record.lessonPlan) {
                 plans.push({
                     id: 'legacy-' + String(record.weekKey || 'week'),
-                    title: record.lessonPlan.title || 'Previous Lesson Plan',
+                    title: record.lessonPlan.title || 'NO TITLE',
                     fileUrl: record.lessonPlan.fileUrl,
                     fileId: record.lessonPlan.fileId,
                     fileName: record.lessonPlan.fileName,
@@ -1100,6 +1101,56 @@
                 });
             }
             return plans;
+        }
+
+        async function promptForMissingLessonPlanTitles(uid) {
+            const records = teacherHistoryRecords.filter(record => record.uid === uid);
+            for (const record of records) {
+                const plans = getTeacherLessonPlans(record);
+                let changed = false;
+                for (const plan of plans) {
+                    const existingTitle = String(plan.title || '').trim();
+                    if (existingTitle && existingTitle.toLocaleUpperCase() !== 'NO TITLE') continue;
+                    let newTitle = window.prompt(`Your uploaded lesson plan has no title. Enter the SUBJECT NAME to use as its title (for example: English 5, Mathematics 7, or Science 6).\n\nFile: ${plan.fileName || 'Uploaded lesson plan'}\nWeek: ${record.weekKey || ''}`, '');
+                    newTitle = String(newTitle || '').trim().replace(/\s+/g, ' ');
+                    if (newTitle) {
+                        const duplicate = plans.some(other => other.id !== plan.id && String(other.title || '').trim().toLocaleLowerCase() === newTitle.toLocaleLowerCase());
+                        if (duplicate) {
+                            showToast(`The title "${newTitle}" is already used for another lesson plan in this week.`, 'error');
+                            newTitle = 'NO TITLE';
+                        }
+                    } else {
+                        newTitle = 'NO TITLE';
+                    }
+                    plan.title = newTitle;
+                    changed = true;
+                }
+                if (!changed) continue;
+                record.lessonPlans = plans;
+                if (record.lessonPlan) {
+                    const latestId = record.lessonPlan.id;
+                    const latestPlan = plans.find(plan => plan.id === latestId) || plans[plans.length - 1];
+                    if (latestPlan) record.lessonPlan = latestPlan;
+                } else if (plans.length) {
+                    record.lessonPlan = plans[plans.length - 1];
+                }
+                const payload = {
+                    uid: record.uid,
+                    teacherName: record.teacherName || currentUser.name,
+                    username: record.username || currentUser.username,
+                    subject: record.subject || currentUser.subject || '',
+                    weekKey: record.weekKey,
+                    lessonPlans: plans,
+                    lessonPlan: record.lessonPlan || null
+                };
+                await db.collection('submission_history').doc(record.docId).set(payload, { merge: true });
+                const latestSubmission = await db.collection('submissions').doc(uid).get();
+                if (latestSubmission.exists && latestSubmission.data().weekKey === record.weekKey) {
+                    await db.collection('submissions').doc(uid).set(payload, { merge: true });
+                }
+            }
+            renderTeacherDashboard();
+            renderTeacherHistoryTable();
         }
 
         function getPlanReflections(record, planId) {
@@ -1122,7 +1173,7 @@
             const lpPill = document.getElementById('lpTeacherStatusPill');
             lpPill.innerText = plans.length ? `${plans.length} UPLOADED` : 'NO UPLOADS';
             lpPill.className = plans.length ? 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800' : 'px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600';
-            planList.innerHTML = plans.length ? plans.map(plan => `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg border border-slate-200 bg-slate-50"><div class="min-w-0"><div class="font-semibold text-sm text-slate-800">${escapeHtml(plan.title || 'Lesson Plan')}</div><div class="text-xs text-slate-500">${escapeHtml(plan.fileName || '')} · ${plan.timestamp ? new Date(plan.timestamp).toLocaleString() : ''}</div><div class="text-xs ${plan.adminReviewed ? 'text-emerald-700' : 'text-amber-700'}">${plan.adminReviewed ? 'Reviewed' : 'Pending review'}</div></div><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="shrink-0 text-xs font-semibold text-sky-700 underline">View file</a></div>`).join('') : '<p class="text-xs text-slate-400">No lesson plans uploaded for this teaching week.</p>';
+            planList.innerHTML = plans.length ? plans.map(plan => `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg border border-slate-200 bg-slate-50"><div class="min-w-0"><div class="font-semibold text-sm text-slate-800">${escapeHtml(plan.title || 'NO TITLE')}</div><div class="text-xs text-slate-500">${escapeHtml(plan.fileName || '')} · ${plan.timestamp ? new Date(plan.timestamp).toLocaleString() : ''}</div><div class="text-xs ${plan.adminReviewed ? 'text-emerald-700' : 'text-amber-700'}">${plan.adminReviewed ? 'Reviewed' : 'Pending review'}</div></div><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="shrink-0 text-xs font-semibold text-sky-700 underline">View file</a></div>`).join('') : '<p class="text-xs text-slate-400">No lesson plans uploaded for this teaching week.</p>';
 
             const refCard = document.getElementById('reflectionCard');
             const refPill = document.getElementById('refTeacherStatusPill');
@@ -1154,7 +1205,7 @@
             planSelect.disabled = false;
             planSelect.classList.remove('bg-slate-100');
             const prior = selectedReflectionPlanId;
-            planSelect.innerHTML = plans.map(plan => `<option value="${escapeHtml(plan.id)}">${escapeHtml(plan.title || 'Lesson Plan')}</option>`).join('');
+            planSelect.innerHTML = plans.map(plan => `<option value="${escapeHtml(plan.id)}">${escapeHtml(plan.title || 'NO TITLE')}</option>`).join('');
             selectedReflectionPlanId = plans.some(plan => plan.id === prior) ? prior : plans[0].id;
             planSelect.value = selectedReflectionPlanId;
             refDaySelect.disabled = false;
@@ -1231,7 +1282,7 @@
             if (!currentUser || currentUser.role !== 'teacher') return;
             const titleInput = document.getElementById('lpTitleInput');
             const title = titleInput.value.trim().replace(/\s+/g, ' ');
-            if (!title) { showToast('Enter what this lesson plan is for.', 'error'); titleInput.focus(); return; }
+            if (!title) { showToast('Enter the subject name as the lesson plan title.', 'error'); titleInput.focus(); return; }
             const inputEl = document.getElementById('lpFileInput');
             const selectedFile = inputEl.files && inputEl.files[0];
             if (!validateSelectedFile(selectedFile)) return;
@@ -1414,7 +1465,7 @@
                 const reflectionCount = Object.values(refs).reduce((sum, value) => sum + (value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value).filter(k => ['Monday','Tuesday','Wednesday','Thursday','Friday'].includes(k)).length : 0), 0) || ['Monday','Tuesday','Wednesday','Thursday','Friday'].filter(day => refs[day]).length;
                 const latest = plans.length ? plans[plans.length - 1] : null;
                 const displayDate = latest && latest.timestamp ? new Date(latest.timestamp).toLocaleDateString() : rec.weekKey;
-                const links = plans.length ? plans.map(plan => `<div class="mb-1"><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="text-sky-700 underline text-xs">${escapeHtml(plan.title || plan.fileName || 'Lesson Plan')}</a></div>`).join('') : '<span class="text-xs text-slate-400 italic">Not uploaded</span>';
+                const links = plans.length ? plans.map(plan => `<div class="mb-1"><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="text-sky-700 underline text-xs">${escapeHtml(plan.title || 'NO TITLE')}</a></div>`).join('') : '<span class="text-xs text-slate-400 italic">Not uploaded</span>';
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
                 tr.innerHTML = `<td class="p-4"><div class="font-semibold text-slate-800">${escapeHtml(displayDate)}</div><div class="text-xs text-slate-400">Week of ${escapeHtml(rec.weekKey)}</div></td><td class="p-4">${links}</td><td class="p-4">${reflectionCount ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">${reflectionCount} Reflection(s)</span>` : '<span class="text-xs text-slate-400 italic">No reflections</span>'}</td><td class="p-4">${reflectionCount ? `<button onclick="openReflectionModal('${escapeHtml(rec.docId)}', 'teacher')" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold">View Reflections</button>` : ''}</td>`;
@@ -1634,7 +1685,7 @@
                         <div class="text-slate-400">Week ${escapeHtml(rec.weekKey)}</div>
                     </td>
                     <td class="p-4">
-                        ${plans.length ? plans.map(plan => `<div class="mb-1"><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="inline-flex items-center px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold text-xs border border-sky-200"><i class="fa-solid fa-file-arrow-down mr-1.5"></i>${escapeHtml(plan.title || plan.fileName || 'Lesson Plan')}</a></div>`).join('') : `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Not Uploaded</span>`}
+                        ${plans.length ? plans.map(plan => `<div class="mb-1"><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="inline-flex items-center px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold text-xs border border-sky-200"><i class="fa-solid fa-file-arrow-down mr-1.5"></i>${escapeHtml(plan.title || 'NO TITLE')}</a></div>`).join('') : `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Not Uploaded</span>`}
                     </td>
                     <td class="p-4">
                         ${reflectionCount > 0
@@ -1760,7 +1811,7 @@
                     hasAny = true;
                     const block = document.createElement('div');
                     block.className = 'bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1.5';
-                    block.innerHTML = `<div class="font-bold text-purple-800 text-xs uppercase">${escapeHtml(plan.title || 'Lesson Plan')} · ${escapeHtml(day)}</div><div class="text-[11px] text-slate-400">${item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</div><p class="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">${escapeHtml(item.text)}</p>`;
+                    block.innerHTML = `<div class="font-bold text-purple-800 text-xs uppercase">${escapeHtml(plan.title || 'NO TITLE')} · ${escapeHtml(day)}</div><div class="text-[11px] text-slate-400">${item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</div><p class="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">${escapeHtml(item.text)}</p>`;
                     bodyEl.appendChild(block);
                 });
             });
@@ -1770,7 +1821,7 @@
                     const item = all[day];
                     const block = document.createElement('div');
                     block.className = 'bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1.5';
-                    block.innerHTML = `<div class="font-bold text-purple-800 text-xs uppercase">Previous Lesson Plan · ${day}</div><div class="text-[11px] text-slate-400">${item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</div><p class="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">${escapeHtml(item.text)}</p>`;
+                    block.innerHTML = `<div class="font-bold text-purple-800 text-xs uppercase">NO TITLE · ${day}</div><div class="text-[11px] text-slate-400">${item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</div><p class="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">${escapeHtml(item.text)}</p>`;
                     bodyEl.appendChild(block);
                 }
             });
