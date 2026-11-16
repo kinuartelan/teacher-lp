@@ -102,7 +102,7 @@
                 <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                         <span class="px-2.5 py-1 bg-sky-500/20 text-sky-300 border border-sky-500/30 rounded-full text-xs font-semibold tracking-wide uppercase">
-                            Current Cycle: Week <span id="currentWeekNum">--</span>
+                            Current Cycle: <span id="currentWeekNum">--</span>
                         </span>
                         <h2 class="text-2xl font-bold mt-2" id="currentDateStr">Loading Date...</h2>
                         <p class="text-slate-400 text-xs mt-1">Weekly Lesson Plan & Daily Reflection Portal</p>
@@ -303,7 +303,7 @@
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                             <div><h3 class="font-bold text-slate-800 text-lg">ANNEX A – LESSON PLANNING RUBRIC</h3><p class="text-xs text-slate-500">Complete and update your rubric for the selected Monday-to-Sunday teaching week.</p></div>
-                            <div class="text-xs font-semibold text-slate-600">Week of <span id="teacherRubricWeekLabel"></span></div>
+                            <div class="text-xs font-semibold text-slate-600"><span id="teacherRubricWeekLabel"></span></div>
                         </div>
                         <div id="teacherRubricForm"><div class="overflow-x-auto"><table class="w-full border-collapse border border-slate-400"><thead><tr class="bg-slate-100 text-xs font-bold text-slate-800"><th class="p-3 text-left border border-slate-400">I can say that in my lesson plan...</th><th class="p-3 border border-slate-400">Yes</th><th class="p-3 border border-slate-400">Not Yet</th><th class="p-3 border border-slate-400">Why? / What will make it better?</th></tr></thead><tbody><tr class="border-b border-slate-300">
 <td class="p-3 text-sm font-medium text-slate-800">1. Intentions are clearly stated, with appropriate learning competencies articulated.</td>
@@ -783,6 +783,15 @@
             return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
         }
 
+        function getWeekDisplayLabel(weekKey) {
+            const monday = getWeekDateFromKey(weekKey);
+            if (isNaN(monday.getTime())) return String(weekKey || '');
+            const day = monday.getDate();
+            const ordinal = day % 100 >= 11 && day % 100 <= 13 ? 'th' : ({1:'st', 2:'nd', 3:'rd'}[day % 10] || 'th');
+            const month = monday.toLocaleDateString('en-US', { month: 'long' }).toUpperCase();
+            return `${Math.ceil(day / 7)}${ordinal} Week of ${month} ${monday.getFullYear()}`;
+        }
+
         function getAllowedTeacherWeekKeys() {
             const currentMonday = getWeekDateFromKey(getWeekStorageKey());
             const keys = [];
@@ -807,7 +816,7 @@
             select.innerHTML = '';
             allowed.forEach((weekKey, index) => {
                 const offset = index - 4;
-                let label = `Week of ${weekKey}`;
+                let label = getWeekDisplayLabel(weekKey);
                 if (offset === 0) label += ' — Current Week';
                 else if (offset < 0) label += ` — ${Math.abs(offset)} week${Math.abs(offset) === 1 ? '' : 's'} ago`;
                 else label += ' — Advance Submission';
@@ -822,9 +831,9 @@
             if (!note) return;
             const selected = getTeacherWeekKey();
             const current = getWeekStorageKey();
-            if (selected < current) note.textContent = `You are submitting for a previous teaching week (${selected}). This will be recorded as a late submission.`;
-            else if (selected > current) note.textContent = `You are submitting one week ahead (${selected}). This will be recorded as an advance submission.`;
-            else note.textContent = `Current teaching week: ${selected}. Regular submission deadlines apply.`;
+            if (selected < current) note.textContent = `You are submitting for a previous teaching week (${getWeekDisplayLabel(selected)}). This will be recorded as a late submission.`;
+            else if (selected > current) note.textContent = `You are submitting one week ahead (${getWeekDisplayLabel(selected)}). This will be recorded as an advance submission.`;
+            else note.textContent = `Current teaching week: ${getWeekDisplayLabel(selected)}. Regular submission deadlines apply.`;
         }
 
         async function changeTeacherWeek(weekKey) {
@@ -901,7 +910,7 @@
                 });
             }
             if (weekNumEl) {
-                weekNumEl.innerText = getWeekIdentifier(now);
+                weekNumEl.innerText = getWeekDisplayLabel(getWeekStorageKey(now));
             }
 
             const lpDiff = lpOnTimeEnd - now;
@@ -1468,7 +1477,7 @@
                 const links = plans.length ? plans.map(plan => `<div class="mb-1"><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="text-sky-700 underline text-xs">${escapeHtml(plan.title || 'NO TITLE')}</a></div>`).join('') : '<span class="text-xs text-slate-400 italic">Not uploaded</span>';
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-slate-50 transition';
-                tr.innerHTML = `<td class="p-4"><div class="font-semibold text-slate-800">${escapeHtml(displayDate)}</div><div class="text-xs text-slate-400">Week of ${escapeHtml(rec.weekKey)}</div></td><td class="p-4">${links}</td><td class="p-4">${reflectionCount ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">${reflectionCount} Reflection(s)</span>` : '<span class="text-xs text-slate-400 italic">No reflections</span>'}</td><td class="p-4">${reflectionCount ? `<button onclick="openReflectionModal('${escapeHtml(rec.docId)}', 'teacher')" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold">View Reflections</button>` : ''}</td>`;
+                tr.innerHTML = `<td class="p-4"><div class="font-semibold text-slate-800">${escapeHtml(displayDate)}</div><div class="text-xs text-slate-400">${escapeHtml(getWeekDisplayLabel(rec.weekKey))}</div></td><td class="p-4">${links}</td><td class="p-4">${reflectionCount ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">${reflectionCount} Reflection(s)</span>` : '<span class="text-xs text-slate-400 italic">No reflections</span>'}</td><td class="p-4">${reflectionCount ? `<button onclick="openReflectionModal('${escapeHtml(rec.docId)}', 'teacher')" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold">View Reflections</button>` : ''}</td>`;
                 tbody.appendChild(tr);
             });
             if (!pageItems.length) tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400 text-sm">No submission records found for the selected filter.</td></tr>';
@@ -1669,7 +1678,7 @@
                 const lp = plans.length ? plans[plans.length - 1] : null;
                 const refs = rec.reflections ? Object.keys(rec.reflections) : [];
                 const reflectionCount = Object.values(rec.reflections || {}).reduce((sum, value) => sum + (value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value).filter(k => ['Monday','Tuesday','Wednesday','Thursday','Friday'].includes(k)).length : 0), 0) || ['Monday','Tuesday','Wednesday','Thursday','Friday'].filter(day => rec.reflections && rec.reflections[day]).length;
-                const displayDate = lp && lp.timestamp ? new Date(lp.timestamp).toLocaleDateString() : `Week of ${rec.weekKey}`;
+                const displayDate = lp && lp.timestamp ? new Date(lp.timestamp).toLocaleDateString() : getWeekDisplayLabel(rec.weekKey);
                 const isReviewed = rec.adminReviewed || (lp && lp.adminReviewed);
 
                 const tr = document.createElement('tr');
@@ -1682,7 +1691,7 @@
                     <td class="p-4 text-slate-600">${escapeHtml(rec.subject)}</td>
                     <td class="p-4 text-xs text-slate-600">
                         <div class="font-medium text-slate-800">${escapeHtml(displayDate)}</div>
-                        <div class="text-slate-400">Week ${escapeHtml(rec.weekKey)}</div>
+                        <div class="text-slate-400">${escapeHtml(getWeekDisplayLabel(rec.weekKey))}</div>
                     </td>
                     <td class="p-4">
                         ${plans.length ? plans.map(plan => `<div class="mb-1"><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="inline-flex items-center px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold text-xs border border-sky-200"><i class="fa-solid fa-file-arrow-down mr-1.5"></i>${escapeHtml(plan.title || 'NO TITLE')}</a></div>`).join('') : `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Not Uploaded</span>`}
@@ -1776,7 +1785,7 @@
                     slaTr.innerHTML = `
                         <td class="p-4">
                             <div class="font-semibold text-slate-800">${escapeHtml(rec.teacherName)}</div>
-                            <div class="text-xs text-sky-600 font-medium">Lesson Plan (${escapeHtml(rec.weekKey)})</div>
+                            <div class="text-xs text-sky-600 font-medium">Lesson Plan (${escapeHtml(getWeekDisplayLabel(rec.weekKey))})</div>
                         </td>
                         <td class="p-4 text-xs text-slate-600">${uploadDate.toLocaleString()}</td>
                         <td class="p-4 text-xs font-semibold text-amber-700">${deadline.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} (Same Day)</td>
@@ -1797,7 +1806,7 @@
             const record = list.find(r => r.docId === docId);
             if (!record) return;
             document.getElementById('modalRefTitle').innerText = `${record.teacherName || currentUser.name} - Weekly Reflections`;
-            document.getElementById('modalRefSubtitle').innerText = `Week of ${record.weekKey}`;
+            document.getElementById('modalRefSubtitle').innerText = getWeekDisplayLabel(record.weekKey);
             const bodyEl = document.getElementById('modalRefBody');
             bodyEl.innerHTML = '';
             const plans = getTeacherLessonPlans(record);
@@ -2178,7 +2187,7 @@
 
         function renderTeacherRubric(record) {
             const weekKey = getTeacherWeekKey();
-            document.getElementById('teacherRubricWeekLabel').innerText = weekKey;
+            document.getElementById('teacherRubricWeekLabel').innerText = getWeekDisplayLabel(weekKey);
             document.getElementById('teacherRubricForm').innerHTML = rubricFormMarkup(record, true);
             document.getElementById('teacherRubricStatus').innerText = record && record.updatedAt ? `Last saved: ${new Date(record.updatedAt).toLocaleString()}` : 'No rubric saved for this week yet.';
             activeRubricRecord = record || null;
@@ -2224,7 +2233,7 @@
                 const result = await rubricApiRequest('loadRubric', { targetUid: uid, weekKey });
                 const record = result.record || null;
                 const person = teachers.find(t => t.id === uid) || (currentUser && currentUser.uid === uid ? currentUser : null);
-                document.getElementById('adminRubricPersonLabel').innerText = `${person ? person.name : 'Selected user'} • Week of ${weekKey}`;
+                document.getElementById('adminRubricPersonLabel').innerText = `${person ? person.name : 'Selected user'} • ${getWeekDisplayLabel(weekKey)}`;
                 const editable = rubricWeekIsCurrent(weekKey) && uid === currentUser.uid;
                 document.getElementById('adminRubricForm').innerHTML = rubricFormMarkup(record, editable);
                 document.getElementById('adminRubricStatus').innerText = record && record.updatedAt ? `Last saved: ${new Date(record.updatedAt).toLocaleString()}` : 'No saved rubric';
@@ -2313,7 +2322,7 @@
                 pdf.text('ANNEX A - LESSON PLANNING RUBRIC', pageWidth / 2, 13, { align: 'center' });
                 pdf.setFont('helvetica', 'normal');
                 pdf.setFontSize(9);
-                pdf.text(`Name: ${data.name}    Week of: ${data.weekKey}`, margin, 21);
+                pdf.text(`Name: ${data.name}    ${getWeekDisplayLabel(data.weekKey)}`, margin, 21);
             };
             const drawTableHead = () => {
                 const h = 11;
