@@ -175,12 +175,16 @@
 
                         <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
                             <div id="lpUploadContainer">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Lesson plan for...</label>
+                                <input type="text" id="lpTitleInput" maxlength="120" placeholder="Example: English 5 - Section A" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none mb-3">
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Select Lesson Plan File</label>
                                 <input type="file" id="lpFileInput" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none mb-3">
                                 <p class="text-xs text-slate-400 mb-3" id="lpSelectedFile">No file selected. Maximum file size: 10 MB.</p>
-                                <button id="submitLpBtn" onclick="submitLessonPlan()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-semibold text-sm shadow transition">
-                                    Submit Lesson Plan
-                                </button>
+                                <button id="submitLpBtn" onclick="submitLessonPlan()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-semibold text-sm shadow transition">Submit Lesson Plan</button>
+                            </div>
+                            <div class="mt-4 border-t border-slate-100 pt-4">
+                                <div class="font-bold text-sm text-slate-700 mb-2">Uploaded Lesson Plans for This Week</div>
+                                <div id="teacherLessonPlanList" class="space-y-2"><p class="text-xs text-slate-400">No lesson plans uploaded yet.</p></div>
                             </div>
 
                             <div id="lpReceiptCard" class="hidden bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs space-y-2">
@@ -220,6 +224,10 @@
 
                         <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
                             <div id="refUploadContainer" class="pointer-events-none space-y-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Reflection for Lesson Plan</label>
+                                    <select id="refLessonPlanSelect" disabled onchange="onReflectionLessonPlanChange()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-slate-100"></select>
+                                </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Select Day of the Week</label>
                                     <select id="refDaySelect" disabled onchange="onReflectionDayChange()" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none bg-slate-100">
@@ -700,7 +708,7 @@
             adminEmail: "kinuartelansupply@gmail.com",
             adminUid: "LqtM4Hz1nRVkCcrq9GcWak5BNyU2",
             teacherEmailDomain: "school-lesson-plan-porta-c8ff2.firebaseapp.com",
-            driveUploadUrl: "https://script.google.com/macros/s/AKfycbzw_FEh2TN56SjLYQq6CGAuJQr8SP84-feBaXFmeoU0N6G9KBRzGX-h0GWON9TQFmSg/exec"
+            driveUploadUrl: "https://script.google.com/macros/s/AKfycbzO-JXnq251eTKparO0pc54w1uLoRCXigEwDfMFl5v-TZJB1bHWCZaF_jVrN3MnkT4U/exec"
         };
 
         const app = firebase.initializeApp(SYSTEM_CONFIG.firebase);
@@ -722,6 +730,7 @@
             "Ways forward and described interventions are actionable, providing ways to extend or adjust learning based on reflections."
         ];
         let selectedTeacherWeekKey = null;
+        let selectedReflectionPlanId = '';
         let activeRubricRecord = null;
         let activeRubricUid = null;
         let activeRubricWeek = null;
@@ -1032,6 +1041,7 @@
                         subject: currentUser.subject,
                         weekKey: legacyWeekKey,
                         lessonPlan: legacyData.lessonPlan || null,
+                        lessonPlans: Array.isArray(legacyData.lessonPlans) ? legacyData.lessonPlans : (legacyData.lessonPlan ? [legacyData.lessonPlan] : []),
                         reflections: legacyData.reflections || {},
                         reflectionExcelUrl: legacyData.reflectionExcelUrl || null,
                         adminReviewed: legacyData.adminReviewed || (legacyData.lessonPlan && legacyData.lessonPlan.adminReviewed) || false,
@@ -1070,47 +1080,54 @@
             if (tab === 'rubrics') loadTeacherRubric();
         }
 
+        function getTeacherLessonPlans(record) {
+            if (!record) return [];
+            let plans = Array.isArray(record.lessonPlans) ? record.lessonPlans.slice() : [];
+            if (!plans.length && record.lessonPlan) {
+                plans.push({
+                    id: 'legacy-' + String(record.weekKey || 'week'),
+                    title: record.lessonPlan.title || 'Previous Lesson Plan',
+                    fileUrl: record.lessonPlan.fileUrl,
+                    fileId: record.lessonPlan.fileId,
+                    fileName: record.lessonPlan.fileName,
+                    fileSize: record.lessonPlan.fileSize,
+                    fileType: record.lessonPlan.fileType,
+                    timestamp: record.lessonPlan.timestamp,
+                    status: record.lessonPlan.status || 'SUBMITTED',
+                    adminReviewed: record.lessonPlan.adminReviewed || record.adminReviewed || false,
+                    adminReviewTime: record.lessonPlan.adminReviewTime || record.adminReviewTime || null,
+                    adminSlaStatus: record.lessonPlan.adminSlaStatus || record.adminSlaStatus || null
+                });
+            }
+            return plans;
+        }
+
+        function getPlanReflections(record, planId) {
+            const all = record && record.reflections ? record.reflections : {};
+            if (all[planId] && typeof all[planId] === 'object') return all[planId];
+            if (planId && planId.startsWith('legacy-')) {
+                const legacy = {};
+                ['Monday','Tuesday','Wednesday','Thursday','Friday'].forEach(day => { if (all[day]) legacy[day] = all[day]; });
+                return legacy;
+            }
+            return {};
+        }
+
         function renderTeacherDashboard() {
             if (!currentUser || currentUser.role !== 'teacher') return;
-
             populateTeacherWeekSelector();
             const record = getCurrentTeacherWeekRecord();
-            const lp = record ? record.lessonPlan : null;
-            const reflections = (record && record.reflections) ? record.reflections : {};
-
+            const plans = getTeacherLessonPlans(record);
+            const planList = document.getElementById('teacherLessonPlanList');
             const lpPill = document.getElementById('lpTeacherStatusPill');
-            const lpReceipt = document.getElementById('lpReceiptCard');
-            const lpUploadContainer = document.getElementById('lpUploadContainer');
-
-            if (lp) {
-                lpPill.innerText = "SUBMITTED";
-                lpPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800";
-                lpUploadContainer.classList.add('hidden');
-                lpReceipt.classList.remove('hidden');
-                document.getElementById('lpReceiptLink').href = lp.fileUrl;
-                document.getElementById('lpReceiptLink').innerText = lp.fileName || 'View File';
-                document.getElementById('lpReceiptTime').innerText = new Date(lp.timestamp).toLocaleString();
-
-                const lpAdminAudit = document.getElementById('lpAdminAudit');
-                const isReviewed = record.adminReviewed || lp.adminReviewed;
-                const revTime = record.adminReviewTime || lp.adminReviewTime;
-                if (isReviewed) {
-                    lpAdminAudit.className = "font-semibold text-emerald-600 flex items-center";
-                    lpAdminAudit.innerHTML = `<i class="fa-solid fa-check-circle mr-1"></i> Reviewed ${new Date(revTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
-                } else {
-                    lpAdminAudit.className = "font-semibold text-amber-600 flex items-center";
-                    lpAdminAudit.innerHTML = `<i class="fa-solid fa-clock mr-1"></i> Pending Principal Review`;
-                }
-            } else {
-                lpPill.innerText = "NOT SUBMITTED";
-                lpPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600";
-                lpUploadContainer.classList.remove('hidden');
-                lpReceipt.classList.add('hidden');
-            }
+            lpPill.innerText = plans.length ? `${plans.length} UPLOADED` : 'NO UPLOADS';
+            lpPill.className = plans.length ? 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800' : 'px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600';
+            planList.innerHTML = plans.length ? plans.map(plan => `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg border border-slate-200 bg-slate-50"><div class="min-w-0"><div class="font-semibold text-sm text-slate-800">${escapeHtml(plan.title || 'Lesson Plan')}</div><div class="text-xs text-slate-500">${escapeHtml(plan.fileName || '')} · ${plan.timestamp ? new Date(plan.timestamp).toLocaleString() : ''}</div><div class="text-xs ${plan.adminReviewed ? 'text-emerald-700' : 'text-amber-700'}">${plan.adminReviewed ? 'Reviewed' : 'Pending review'}</div></div><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="shrink-0 text-xs font-semibold text-sky-700 underline">View file</a></div>`).join('') : '<p class="text-xs text-slate-400">No lesson plans uploaded for this teaching week.</p>';
 
             const refCard = document.getElementById('reflectionCard');
             const refPill = document.getElementById('refTeacherStatusPill');
             const refUploadContainer = document.getElementById('refUploadContainer');
+            const planSelect = document.getElementById('refLessonPlanSelect');
             const refDaySelect = document.getElementById('refDaySelect');
             const refTextInput = document.getElementById('refTextInput');
             const submitRefBtn = document.getElementById('submitRefBtn');
@@ -1118,70 +1135,78 @@
             const refDaysBadges = document.getElementById('refDaysBadges');
             const refExcelLink = document.getElementById('refExcelLink');
 
-            if (!lp) {
+            if (!plans.length) {
                 refCard.classList.add('opacity-60');
-                refPill.innerText = "LOCKED";
-                refPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500";
+                refPill.innerText = 'LOCKED';
+                refPill.className = 'px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500';
                 refUploadContainer.classList.add('pointer-events-none');
+                planSelect.disabled = true;
                 refDaySelect.disabled = true;
                 refTextInput.disabled = true;
                 submitRefBtn.disabled = true;
+                planSelect.innerHTML = '<option value="">Upload a lesson plan first</option>';
                 refSavedSummary.classList.add('hidden');
-            } else {
-                refCard.classList.remove('opacity-60');
-                refUploadContainer.classList.remove('pointer-events-none');
-                refDaySelect.disabled = false;
-                refDaySelect.classList.remove('bg-slate-100');
-
-                const daysWritten = Object.keys(reflections);
-                if (daysWritten.length > 0) {
-                    refPill.innerText = `${daysWritten.length} DAY(S) RECORDED`;
-                    refPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800";
-                    refSavedSummary.classList.remove('hidden');
-                    refDaysBadges.innerHTML = '';
-                    ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].forEach(day => {
-                        if (reflections[day]) {
-                            const badge = document.createElement('span');
-                            badge.className = "px-2.5 py-1 rounded-md bg-purple-100 text-purple-800 font-semibold text-[11px] cursor-pointer hover:bg-purple-200";
-                            badge.innerText = `${day} ✓`;
-                            badge.onclick = () => {
-                                refDaySelect.value = day;
-                                onReflectionDayChange();
-                            };
-                            refDaysBadges.appendChild(badge);
-                        }
-                    });
-                    refExcelLink.classList.add('hidden');
-                } else {
-                    refPill.innerText = "READY TO WRITE";
-                    refPill.className = "px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700";
-                    refSavedSummary.classList.add('hidden');
-                }
-                onReflectionDayChange();
+                return;
             }
+
+            refCard.classList.remove('opacity-60');
+            refUploadContainer.classList.remove('pointer-events-none');
+            planSelect.disabled = false;
+            planSelect.classList.remove('bg-slate-100');
+            const prior = selectedReflectionPlanId;
+            planSelect.innerHTML = plans.map(plan => `<option value="${escapeHtml(plan.id)}">${escapeHtml(plan.title || 'Lesson Plan')}</option>`).join('');
+            selectedReflectionPlanId = plans.some(plan => plan.id === prior) ? prior : plans[0].id;
+            planSelect.value = selectedReflectionPlanId;
+            refDaySelect.disabled = false;
+            refDaySelect.classList.remove('bg-slate-100');
+            const reflections = getPlanReflections(record, selectedReflectionPlanId);
+            const daysWritten = Object.keys(reflections);
+            refPill.innerText = daysWritten.length ? `${daysWritten.length} DAY(S) RECORDED` : 'READY TO WRITE';
+            refPill.className = 'px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800';
+            if (daysWritten.length) {
+                refSavedSummary.classList.remove('hidden');
+                refDaysBadges.innerHTML = '';
+                ['Monday','Tuesday','Wednesday','Thursday','Friday'].forEach(day => {
+                    if (reflections[day]) {
+                        const badge = document.createElement('span');
+                        badge.className = 'px-2.5 py-1 rounded-md bg-purple-100 text-purple-800 font-semibold text-[11px] cursor-pointer hover:bg-purple-200';
+                        badge.innerText = `${day} ✓`;
+                        badge.onclick = () => { refDaySelect.value = day; onReflectionDayChange(); };
+                        refDaysBadges.appendChild(badge);
+                    }
+                });
+            } else refSavedSummary.classList.add('hidden');
+            refExcelLink.classList.add('hidden');
+            onReflectionDayChange();
+        }
+
+        function onReflectionLessonPlanChange() {
+            selectedReflectionPlanId = document.getElementById('refLessonPlanSelect').value;
+            onReflectionDayChange();
         }
 
         function onReflectionDayChange() {
             const record = getCurrentTeacherWeekRecord();
-            const reflections = (record && record.reflections) ? record.reflections : {};
+            const planId = document.getElementById('refLessonPlanSelect').value || selectedReflectionPlanId;
+            const reflections = getPlanReflections(record, planId);
             const selectedDay = document.getElementById('refDaySelect').value;
             const refTextInput = document.getElementById('refTextInput');
             const submitRefBtn = document.getElementById('submitRefBtn');
-
             if (reflections[selectedDay]) {
-                refTextInput.value = reflections[selectedDay].text || "";
+                refTextInput.value = reflections[selectedDay].text || '';
                 refTextInput.disabled = true;
                 refTextInput.classList.add('bg-slate-100');
                 submitRefBtn.disabled = true;
                 submitRefBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 submitRefBtn.innerText = `Saved & Locked (${selectedDay})`;
             } else {
-                refTextInput.value = "";
+                refTextInput.value = '';
                 refTextInput.disabled = false;
                 refTextInput.classList.remove('bg-slate-100');
-                submitRefBtn.disabled = false;
-                submitRefBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                submitRefBtn.innerText = "Save Reflection to Drive Excel";
+                submitRefBtn.disabled = !planId;
+                submitRefBtn.classList.toggle('opacity-50', !planId);
+                submitRefBtn.classList.toggle('cursor-not-allowed', !planId);
+                submitRefBtn.innerText = 'LOCK and SAVE the reflection';
             }
         }
 
@@ -1203,23 +1228,27 @@
         }
 
         async function submitLessonPlan() {
-            if (!currentUser || currentUser.role !== "teacher") return;
+            if (!currentUser || currentUser.role !== 'teacher') return;
+            const titleInput = document.getElementById('lpTitleInput');
+            const title = titleInput.value.trim().replace(/\s+/g, ' ');
+            if (!title) { showToast('Enter what this lesson plan is for.', 'error'); titleInput.focus(); return; }
             const inputEl = document.getElementById('lpFileInput');
             const selectedFile = inputEl.files && inputEl.files[0];
-
             if (!validateSelectedFile(selectedFile)) return;
-
+            const weekKey = getTeacherWeekKey();
+            const currentRecord = getCurrentTeacherWeekRecord() || {};
+            const existingPlans = getTeacherLessonPlans(currentRecord);
+            if (existingPlans.some(plan => String(plan.title || '').trim().toLocaleLowerCase() === title.toLocaleLowerCase())) {
+                showToast('A lesson plan with this title already exists for the selected week. Use a different title.', 'error');
+                titleInput.focus();
+                return;
+            }
             const submitButton = document.getElementById('submitLpBtn');
             const originalButtonText = submitButton.innerText;
             submitButton.disabled = true;
-            submitButton.innerText = "Uploading...";
-
+            submitButton.innerText = 'Uploading...';
             try {
-                const mimeTypes = {
-                    pdf: 'application/pdf',
-                    doc: 'application/msword',
-                    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-                };
+                const mimeTypes = { pdf: 'application/pdf', doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' };
                 const extension = selectedFile.name.split('.').pop().toLowerCase();
                 const mimeType = mimeTypes[extension];
                 const fileData = await new Promise((resolve, reject) => {
@@ -1228,218 +1257,112 @@
                     reader.onerror = () => reject(new Error('Unable to read the selected file.'));
                     reader.readAsDataURL(selectedFile);
                 });
-                const weekKey = getTeacherWeekKey();
                 const driveResponse = await fetch(SYSTEM_CONFIG.driveUploadUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({
-                        fileName: selectedFile.name,
-                        fileData,
-                        mimeType,
-                        username: currentUser.username,
-                        teacherName: currentUser.name,
-                        submissionType: 'lessonPlan',
-                        week: weekKey
-                    })
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ fileName: selectedFile.name, fileData, mimeType, username: currentUser.username, teacherName: currentUser.name, submissionType: 'lessonPlan', week: weekKey, lessonPlanTitle: title })
                 });
-                if (!driveResponse.ok) {
-                    throw new Error(`Google Drive upload request failed (${driveResponse.status}).`);
-                }
+                if (!driveResponse.ok) throw new Error(`Google Drive upload request failed (${driveResponse.status}).`);
                 const driveResult = await driveResponse.json();
-                if (!driveResult.success || !driveResult.fileUrl) {
-                    throw new Error(driveResult.error || 'Google Drive did not confirm the upload.');
-                }
-
+                if (!driveResult.success || !driveResult.fileUrl) throw new Error(driveResult.error || 'Google Drive did not confirm the upload.');
                 const nowIso = new Date().toISOString();
+                const planId = 'lp-' + btoa(unescape(encodeURIComponent(title.toLocaleLowerCase()))).replace(/[^a-zA-Z0-9]/g, '').slice(0, 32) + '-' + Date.now();
                 const submission = {
-                    fileUrl: driveResult.fileUrl,
-                    fileId: driveResult.fileId,
-                    fileName: driveResult.fileName || selectedFile.name,
-                    fileSize: selectedFile.size,
-                    fileType: selectedFile.type || '',
-                    status: 'SUBMITTED',
-                    submissionTiming: getSubmissionTiming(weekKey, new Date(nowIso)),
-                    timestamp: nowIso,
-                    dateStr: getLocalDateString(nowIso),
-                    adminReviewed: false,
-                    adminReviewTime: null,
-                    adminSlaStatus: null
+                    id: planId, title, fileUrl: driveResult.fileUrl, fileId: driveResult.fileId,
+                    fileName: driveResult.fileName || selectedFile.name, fileSize: selectedFile.size,
+                    fileType: selectedFile.type || '', status: 'SUBMITTED',
+                    submissionTiming: getSubmissionTiming(weekKey, new Date(nowIso)), timestamp: nowIso,
+                    dateStr: getLocalDateString(nowIso), adminReviewed: false, adminReviewTime: null, adminSlaStatus: null
                 };
-
+                const updatedPlans = [...existingPlans, submission];
                 const historyDocId = `${currentUser.uid}_${weekKey}`;
                 const recordPayload = {
-                    uid: currentUser.uid,
-                    teacherName: currentUser.name,
-                    username: currentUser.username,
-                    subject: currentUser.subject,
-                    weekKey: weekKey,
-                    submissionTiming: getSubmissionTiming(weekKey, new Date(nowIso)),
-                    dateStr: getLocalDateString(nowIso),
-                    lessonPlan: submission,
-                    adminReviewed: false,
-                    adminReviewTime: null,
-                    adminSlaStatus: null
+                    uid: currentUser.uid, teacherName: currentUser.name, username: currentUser.username,
+                    subject: currentUser.subject, weekKey, submissionTiming: getSubmissionTiming(weekKey, new Date(nowIso)),
+                    dateStr: getLocalDateString(nowIso), lessonPlans: updatedPlans, lessonPlan: submission,
+                    adminReviewed: false, adminReviewTime: null, adminSlaStatus: null
                 };
-
                 await Promise.all([
                     db.collection('submission_history').doc(historyDocId).set(recordPayload, { merge: true }),
                     db.collection('submissions').doc(currentUser.uid).set(recordPayload, { merge: true })
                 ]);
-
-                inputEl.value = "";
-                document.getElementById('lpSelectedFile').innerText = "No file selected. Maximum file size: 10 MB.";
+                inputEl.value = '';
+                titleInput.value = '';
+                document.getElementById('lpSelectedFile').innerText = 'No file selected. Maximum file size: 10 MB.';
                 await loadTeacherData(currentUser.uid);
-                showToast("Lesson Plan uploaded successfully!", "success");
+                showToast(`Lesson plan for ${title} uploaded successfully!`, 'success');
             } catch (error) {
                 console.error(error);
-                showToast("File upload failed: " + error.message, "error");
+                showToast('File upload failed: ' + error.message, 'error');
             } finally {
                 submitButton.disabled = false;
                 submitButton.innerText = originalButtonText;
             }
         }
 
-        function buildReflectionsExcelXml(teacherName, subject, weekKey, reflectionsObj) {
+        function buildReflectionsExcelXml(teacherName, subject, weekKey, reflectionsObj, lessonPlanTitle) {
             const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-            let rowsXml = `
-                <Row>
-                    <Cell><Data ss:Type="String">Teacher Name</Data></Cell>
-                    <Cell><Data ss:Type="String">Subject</Data></Cell>
-                    <Cell><Data ss:Type="String">Week Start</Data></Cell>
-                    <Cell><Data ss:Type="String">Day</Data></Cell>
-                    <Cell><Data ss:Type="String">Reflection</Data></Cell>
-                    <Cell><Data ss:Type="String">Submitted Timestamp</Data></Cell>
-                </Row>
-            `;
+            let rowsXml = '<Row><Cell><Data ss:Type="String">Teacher Name</Data></Cell><Cell><Data ss:Type="String">Subject</Data></Cell><Cell><Data ss:Type="String">Lesson Plan For</Data></Cell><Cell><Data ss:Type="String">Week Start</Data></Cell><Cell><Data ss:Type="String">Day</Data></Cell><Cell><Data ss:Type="String">Reflection</Data></Cell><Cell><Data ss:Type="String">Submitted Timestamp</Data></Cell></Row>';
+            const xml = value => String(value || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
             days.forEach(day => {
                 if (reflectionsObj[day]) {
                     const entry = reflectionsObj[day];
-                    const cleanText = String(entry.text || "")
-                        .replace(/&/g, '&amp;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;')
-                        .replace(/"/g, '&quot;')
-                        .replace(/'/g, '&apos;');
-                    const cleanName = String(teacherName || "").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    const cleanSubj = String(subject || "").replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                    rowsXml += `
-                        <Row>
-                            <Cell><Data ss:Type="String">${cleanName}</Data></Cell>
-                            <Cell><Data ss:Type="String">${cleanSubj}</Data></Cell>
-                            <Cell><Data ss:Type="String">${weekKey}</Data></Cell>
-                            <Cell><Data ss:Type="String">${day}</Data></Cell>
-                            <Cell><Data ss:Type="String">${cleanText}</Data></Cell>
-                            <Cell><Data ss:Type="String">${new Date(entry.timestamp).toLocaleString()}</Data></Cell>
-                        </Row>
-                    `;
+                    rowsXml += `<Row><Cell><Data ss:Type="String">${xml(teacherName)}</Data></Cell><Cell><Data ss:Type="String">${xml(subject)}</Data></Cell><Cell><Data ss:Type="String">${xml(lessonPlanTitle)}</Data></Cell><Cell><Data ss:Type="String">${xml(weekKey)}</Data></Cell><Cell><Data ss:Type="String">${day}</Data></Cell><Cell><Data ss:Type="String">${xml(entry.text)}</Data></Cell><Cell><Data ss:Type="String">${xml(new Date(entry.timestamp).toLocaleString())}</Data></Cell></Row>`;
                 }
             });
-
-            return `<?xml version="1.0"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
- <Worksheet ss:Name="Weekly Reflections">
-  <Table>
-   ${rowsXml}
-  </Table>
- </Worksheet>
-</Workbook>`;
+            return `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Weekly Reflections"><Table>${rowsXml}</Table></Worksheet></Workbook>`;
         }
 
         async function submitReflectionText() {
-            if (!currentUser || currentUser.role !== "teacher") return;
+            if (!currentUser || currentUser.role !== 'teacher') return;
             const currentRecord = getCurrentTeacherWeekRecord();
-            if (!currentRecord || !currentRecord.lessonPlan) {
-                showToast("Please upload your Weekly Lesson Plan first.", "error");
-                return;
-            }
-
+            const plans = getTeacherLessonPlans(currentRecord);
+            const planId = document.getElementById('refLessonPlanSelect').value;
+            const selectedPlan = plans.find(plan => plan.id === planId);
+            if (!selectedPlan) { showToast('Select a lesson plan first.', 'error'); return; }
             const selectedDay = document.getElementById('refDaySelect').value;
-            const reflections = currentRecord.reflections || {};
-            
-            if (reflections[selectedDay]) {
-                showToast(`${selectedDay} reflection is already saved and locked.`, "error");
-                return;
-            }
-
+            const allReflections = currentRecord && currentRecord.reflections ? { ...currentRecord.reflections } : {};
+            const reflections = getPlanReflections(currentRecord, planId);
+            if (reflections[selectedDay]) { showToast(`${selectedDay} reflection for ${selectedPlan.title} is already saved and locked.`, 'error'); return; }
             const textContent = document.getElementById('refTextInput').value.trim();
-            if (!textContent) {
-                showToast("Please enter your reflection before saving.", "error");
-                return;
-            }
-
+            if (!textContent) { showToast('Please enter your reflection before saving.', 'error'); return; }
             const submitButton = document.getElementById('submitRefBtn');
             const originalText = submitButton.innerText;
             submitButton.disabled = true;
-            submitButton.innerText = "Saving to Drive Excel...";
-
+            submitButton.innerText = 'Saving to Drive Excel...';
             try {
                 const weekKey = getTeacherWeekKey();
                 const nowIso = new Date().toISOString();
-                const updatedReflections = { ...reflections };
-                updatedReflections[selectedDay] = {
-                    day: selectedDay,
-                    text: textContent,
-                    timestamp: nowIso,
-                    dateStr: getLocalDateString(nowIso)
-                };
-
-                const excelXml = buildReflectionsExcelXml(currentUser.name, currentUser.subject, weekKey, updatedReflections);
+                const updatedPlanReflections = { ...reflections, [selectedDay]: { day: selectedDay, text: textContent, timestamp: nowIso, dateStr: getLocalDateString(nowIso), lessonPlanId: planId, lessonPlanTitle: selectedPlan.title } };
+                allReflections[planId] = updatedPlanReflections;
+                const excelXml = buildReflectionsExcelXml(currentUser.name, currentUser.subject, weekKey, updatedPlanReflections, selectedPlan.title);
                 const base64Excel = btoa(unescape(encodeURIComponent(excelXml)));
-                const excelFileName = `Reflections_${currentUser.username}_${weekKey}.xls`;
-
-                let excelFileUrl = currentRecord.reflectionExcelUrl || null;
-                let excelFileId = currentRecord.reflectionExcelId || null;
-
+                const safeTitle = selectedPlan.title.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '').slice(0, 60);
+                const excelFileName = `Reflections_${currentUser.username}_${safeTitle}_${weekKey}.xls`;
                 const driveResponse = await fetch(SYSTEM_CONFIG.driveUploadUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({
-                        fileName: excelFileName,
-                        fileData: base64Excel,
-                        mimeType: 'application/vnd.ms-excel',
-                        username: currentUser.username,
-                        teacherName: currentUser.name,
-                        submissionType: 'reflection',
-                        week: weekKey
-                    })
+                    method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ fileName: excelFileName, fileData: base64Excel, mimeType: 'application/vnd.ms-excel', username: currentUser.username, teacherName: currentUser.name, submissionType: 'reflection', week: weekKey, lessonPlanTitle: selectedPlan.title })
                 });
-
-                if (driveResponse.ok) {
-                    const driveResult = await driveResponse.json();
-                    if (driveResult.success && driveResult.fileUrl) {
-                        excelFileUrl = driveResult.fileUrl;
-                        excelFileId = driveResult.fileId || null;
-                    }
-                }
-
+                if (!driveResponse.ok) throw new Error(`Google Drive reflection upload failed (${driveResponse.status}).`);
+                const driveResult = await driveResponse.json();
+                if (!driveResult.success || !driveResult.fileUrl) throw new Error(driveResult.error || 'Google Drive did not confirm the reflection file.');
                 const historyDocId = `${currentUser.uid}_${weekKey}`;
                 const updatePayload = {
-                    uid: currentUser.uid,
-                    teacherName: currentUser.name,
-                    username: currentUser.username,
-                    subject: currentUser.subject,
-                    weekKey: weekKey,
-                    submissionTiming: getSubmissionTiming(weekKey, new Date(nowIso)),
-                    reflections: updatedReflections,
-                    reflectionExcelUrl: excelFileUrl,
-                    reflectionExcelId: excelFileId,
-                    lastReflectionTimestamp: nowIso
+                    uid: currentUser.uid, teacherName: currentUser.name, username: currentUser.username,
+                    subject: currentUser.subject, weekKey, submissionTiming: getSubmissionTiming(weekKey, new Date(nowIso)),
+                    reflections: allReflections,
+                    reflectionFiles: { ...(currentRecord.reflectionFiles || {}), [planId]: { fileUrl: driveResult.fileUrl, fileId: driveResult.fileId || null, fileName: driveResult.fileName || excelFileName } },
+                    reflectionExcelUrl: driveResult.fileUrl, reflectionExcelId: driveResult.fileId || null, lastReflectionTimestamp: nowIso
                 };
-
                 await Promise.all([
                     db.collection('submission_history').doc(historyDocId).set(updatePayload, { merge: true }),
                     db.collection('submissions').doc(currentUser.uid).set(updatePayload, { merge: true })
                 ]);
-
                 await loadTeacherData(currentUser.uid);
-                showToast(`${selectedDay} reflection saved and locked!`, "success");
+                selectedReflectionPlanId = planId;
+                showToast(`${selectedDay} reflection for ${selectedPlan.title} saved and locked!`, 'success');
             } catch (error) {
                 console.error(error);
-                showToast("Unable to save reflection: " + error.message, "error");
+                showToast('Unable to save reflection: ' + error.message, 'error');
             } finally {
                 submitButton.disabled = false;
                 submitButton.innerText = originalText;
@@ -1481,57 +1404,24 @@
             const tbody = document.getElementById('teacherHistoryTableBody');
             if (!tbody) return;
             tbody.innerHTML = '';
-
             const total = filteredTeacherHistory.length;
             const startIndex = (teacherHistoryPage - 1) * PAGE_SIZE;
             const endIndex = Math.min(startIndex + PAGE_SIZE, total);
             const pageItems = filteredTeacherHistory.slice(startIndex, endIndex);
-
             pageItems.forEach(rec => {
-                const lp = rec.lessonPlan;
-                const refs = rec.reflections ? Object.keys(rec.reflections) : [];
-                const displayDate = lp ? new Date(lp.timestamp).toLocaleDateString() : rec.weekKey;
-
+                const plans = getTeacherLessonPlans(rec);
+                const refs = rec.reflections || {};
+                const reflectionCount = Object.values(refs).reduce((sum, value) => sum + (value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value).filter(k => ['Monday','Tuesday','Wednesday','Thursday','Friday'].includes(k)).length : 0), 0) || ['Monday','Tuesday','Wednesday','Thursday','Friday'].filter(day => refs[day]).length;
+                const latest = plans.length ? plans[plans.length - 1] : null;
+                const displayDate = latest && latest.timestamp ? new Date(latest.timestamp).toLocaleDateString() : rec.weekKey;
+                const links = plans.length ? plans.map(plan => `<div class="mb-1"><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="text-sky-700 underline text-xs">${escapeHtml(plan.title || plan.fileName || 'Lesson Plan')}</a></div>`).join('') : '<span class="text-xs text-slate-400 italic">Not uploaded</span>';
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition";
-                tr.innerHTML = `
-                    <td class="p-4">
-                        <div class="font-semibold text-slate-800">${escapeHtml(displayDate)}</div>
-                        <div class="text-xs text-slate-400">Week of ${escapeHtml(rec.weekKey)}</div>
-                    </td>
-                    <td class="p-4">
-                        ${lp
-                            ? `<a href="${escapeHtml(lp.fileUrl)}" target="_blank" class="inline-flex items-center px-3 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold text-xs border border-sky-200">
-                                <i class="fa-solid fa-file-lines mr-1.5"></i> ${escapeHtml(lp.fileName || 'View Lesson Plan')}
-                               </a>`
-                            : `<span class="text-xs text-slate-400 italic">Not uploaded</span>`
-                        }
-                    </td>
-                    <td class="p-4">
-                        ${refs.length > 0
-                            ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">${refs.length} Day(s): ${escapeHtml(refs.join(', '))}</span>`
-                            : `<span class="text-xs text-slate-400 italic">No reflections</span>`
-                        }
-                    </td>
-                    <td class="p-4 space-x-2">
-                        ${refs.length > 0
-                            ? `<button onclick="openReflectionModal('${escapeHtml(rec.docId)}', 'teacher')" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold">
-                                View Reflections
-                               </button>`
-                            : ''
-                        }
-                    </td>
-                `;
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `<td class="p-4"><div class="font-semibold text-slate-800">${escapeHtml(displayDate)}</div><div class="text-xs text-slate-400">Week of ${escapeHtml(rec.weekKey)}</div></td><td class="p-4">${links}</td><td class="p-4">${reflectionCount ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800">${reflectionCount} Reflection(s)</span>` : '<span class="text-xs text-slate-400 italic">No reflections</span>'}</td><td class="p-4">${reflectionCount ? `<button onclick="openReflectionModal('${escapeHtml(rec.docId)}', 'teacher')" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold">View Reflections</button>` : ''}</td>`;
                 tbody.appendChild(tr);
             });
-
-            if (pageItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-slate-400 text-sm">No submission records found for the selected filter.</td></tr>`;
-            }
-
-            document.getElementById('teacherHistoryPageInfo').innerText = total === 0
-                ? "Showing 0 to 0 of 0 entries"
-                : `Showing ${startIndex + 1} to ${endIndex} of ${total} entries`;
+            if (!pageItems.length) tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-400 text-sm">No submission records found for the selected filter.</td></tr>';
+            document.getElementById('teacherHistoryPageInfo').innerText = total === 0 ? 'Showing 0 to 0 of 0 entries' : `Showing ${startIndex + 1} to ${endIndex} of ${total} entries`;
             document.getElementById('teacherPrevBtn').disabled = teacherHistoryPage <= 1;
             document.getElementById('teacherNextBtn').disabled = endIndex >= total;
         }
@@ -1586,6 +1476,7 @@
                         username: data.username || tInfo.username || "",
                         weekKey,
                         lessonPlan: data.lessonPlan || null,
+                        lessonPlans: Array.isArray(data.lessonPlans) ? data.lessonPlans : (data.lessonPlan ? [data.lessonPlan] : []),
                         reflections: data.reflections || {},
                         reflectionExcelUrl: data.reflectionExcelUrl || null,
                         adminReviewed: data.adminReviewed || (data.lessonPlan && data.lessonPlan.adminReviewed) || false,
@@ -1606,6 +1497,7 @@
                         username: t.username,
                         weekKey: currentWeekKey,
                         lessonPlan: null,
+                        lessonPlans: [],
                         reflections: {},
                         reflectionExcelUrl: null,
                         adminReviewed: false,
@@ -1705,7 +1597,7 @@
             const currentWeekKey = getWeekStorageKey();
             const currentWeekRecords = allSubmissionRecords.filter(r => r.weekKey === currentWeekKey);
             const totalTeachersCount = teachers.length;
-            const successfulLpCount = currentWeekRecords.filter(r => r.lessonPlan && r.lessonPlan.fileUrl).length;
+            const successfulLpCount = currentWeekRecords.reduce((sum, r) => sum + getTeacherLessonPlans(r).length, 0);
             const successfulRefCount = currentWeekRecords.filter(r => r.reflections && Object.keys(r.reflections).length > 0).length;
 
             document.getElementById('statTotalTeachers').innerText = totalTeachersCount;
@@ -1722,9 +1614,11 @@
             const pageItems = filteredAdminRecords.slice(startIndex, endIndex);
 
             pageItems.forEach(rec => {
-                const lp = rec.lessonPlan;
+                const plans = getTeacherLessonPlans(rec);
+                const lp = plans.length ? plans[plans.length - 1] : null;
                 const refs = rec.reflections ? Object.keys(rec.reflections) : [];
-                const displayDate = lp ? new Date(lp.timestamp).toLocaleDateString() : `Week of ${rec.weekKey}`;
+                const reflectionCount = Object.values(rec.reflections || {}).reduce((sum, value) => sum + (value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value).filter(k => ['Monday','Tuesday','Wednesday','Thursday','Friday'].includes(k)).length : 0), 0) || ['Monday','Tuesday','Wednesday','Thursday','Friday'].filter(day => rec.reflections && rec.reflections[day]).length;
+                const displayDate = lp && lp.timestamp ? new Date(lp.timestamp).toLocaleDateString() : `Week of ${rec.weekKey}`;
                 const isReviewed = rec.adminReviewed || (lp && lp.adminReviewed);
 
                 const tr = document.createElement('tr');
@@ -1740,18 +1634,13 @@
                         <div class="text-slate-400">Week ${escapeHtml(rec.weekKey)}</div>
                     </td>
                     <td class="p-4">
-                        ${lp
-                            ? `<a href="${escapeHtml(lp.fileUrl)}" target="_blank" class="inline-flex items-center px-3 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold text-xs border border-sky-200">
-                                <i class="fa-solid fa-file-arrow-down mr-1.5"></i> ${escapeHtml(lp.fileName || 'Lesson Plan')}
-                               </a>`
-                            : `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Not Uploaded</span>`
-                        }
+                        ${plans.length ? plans.map(plan => `<div class="mb-1"><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="inline-flex items-center px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold text-xs border border-sky-200"><i class="fa-solid fa-file-arrow-down mr-1.5"></i>${escapeHtml(plan.title || plan.fileName || 'Lesson Plan')}</a></div>`).join('') : `<span class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Not Uploaded</span>`}
                     </td>
                     <td class="p-4">
-                        ${refs.length > 0
+                        ${reflectionCount > 0
                             ? `<div class="flex flex-wrap items-center gap-1.5">
                                 <button onclick="openReflectionModal('${escapeHtml(rec.docId)}', 'admin')" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold">
-                                    View Reflections (${refs.length})
+                                    View Reflections (${reflectionCount})
                                 </button>
                                 ${rec.reflectionExcelUrl
                                     ? `<a href="${escapeHtml(rec.reflectionExcelUrl)}" target="_blank" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold">
@@ -1856,46 +1745,39 @@
             const list = source === 'admin' ? allSubmissionRecords : teacherHistoryRecords;
             const record = list.find(r => r.docId === docId);
             if (!record) return;
-
             document.getElementById('modalRefTitle').innerText = `${record.teacherName || currentUser.name} - Weekly Reflections`;
             document.getElementById('modalRefSubtitle').innerText = `Week of ${record.weekKey}`;
-
             const bodyEl = document.getElementById('modalRefBody');
             bodyEl.innerHTML = '';
-
-            const reflections = record.reflections || {};
-            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            const plans = getTeacherLessonPlans(record);
+            const all = record.reflections || {};
             let hasAny = false;
-
-            days.forEach(day => {
-                if (reflections[day]) {
-                    hasAny = true;
+            plans.forEach(plan => {
+                const reflections = getPlanReflections(record, plan.id);
+                Object.keys(reflections).forEach(day => {
                     const item = reflections[day];
+                    if (!item || !item.text) return;
+                    hasAny = true;
                     const block = document.createElement('div');
-                    block.className = "bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1.5";
-                    block.innerHTML = `
-                        <div class="flex justify-between items-center">
-                            <span class="font-bold text-purple-800 text-xs uppercase">${escapeHtml(day)}</span>
-                            <span class="text-[11px] text-slate-400">${new Date(item.timestamp).toLocaleString()}</span>
-                        </div>
-                        <p class="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">${escapeHtml(item.text)}</p>
-                    `;
+                    block.className = 'bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1.5';
+                    block.innerHTML = `<div class="font-bold text-purple-800 text-xs uppercase">${escapeHtml(plan.title || 'Lesson Plan')} · ${escapeHtml(day)}</div><div class="text-[11px] text-slate-400">${item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</div><p class="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">${escapeHtml(item.text)}</p>`;
+                    bodyEl.appendChild(block);
+                });
+            });
+            ['Monday','Tuesday','Wednesday','Thursday','Friday'].forEach(day => {
+                if (all[day] && !plans.some(plan => plan.id.startsWith('legacy-'))) {
+                    hasAny = true;
+                    const item = all[day];
+                    const block = document.createElement('div');
+                    block.className = 'bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-1.5';
+                    block.innerHTML = `<div class="font-bold text-purple-800 text-xs uppercase">Previous Lesson Plan · ${day}</div><div class="text-[11px] text-slate-400">${item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</div><p class="text-slate-700 whitespace-pre-wrap text-sm leading-relaxed">${escapeHtml(item.text)}</p>`;
                     bodyEl.appendChild(block);
                 }
             });
-
-            if (!hasAny) {
-                bodyEl.innerHTML = `<p class="text-slate-400 text-center py-6">No reflections recorded for this week.</p>`;
-            }
-
+            if (!hasAny) bodyEl.innerHTML = '<p class="text-slate-400 text-center py-6">No reflections recorded for this week.</p>';
             const excelBtn = document.getElementById('modalRefExcelBtn');
-            if (record.reflectionExcelUrl && currentUserRole === 'admin') {
-                excelBtn.href = record.reflectionExcelUrl;
-                excelBtn.classList.remove('hidden');
-            } else {
-                excelBtn.classList.add('hidden');
-            }
-
+            if (record.reflectionExcelUrl && currentUserRole === 'admin') { excelBtn.href = record.reflectionExcelUrl; excelBtn.classList.remove('hidden'); }
+            else excelBtn.classList.add('hidden');
             document.getElementById('reflectionModal').classList.remove('hidden');
         }
 
