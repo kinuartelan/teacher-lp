@@ -787,9 +787,10 @@
             const monday = getWeekDateFromKey(weekKey);
             if (isNaN(monday.getTime())) return String(weekKey || '');
             const day = monday.getDate();
-            const ordinal = day % 100 >= 11 && day % 100 <= 13 ? 'th' : ({1:'st', 2:'nd', 3:'rd'}[day % 10] || 'th');
+            const weekNumber = Math.ceil(day / 7);
+            const ordinal = ({1:'st', 2:'nd', 3:'rd'}[weekNumber] || 'th');
             const month = monday.toLocaleDateString('en-US', { month: 'long' }).toUpperCase();
-            return `${Math.ceil(day / 7)}${ordinal} Week of ${month} ${monday.getFullYear()}`;
+            return `${weekNumber}${ordinal} Week of ${month} ${monday.getFullYear()}`;
         }
 
         function getAllowedTeacherWeekKeys() {
