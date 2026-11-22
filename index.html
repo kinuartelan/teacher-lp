@@ -131,10 +131,13 @@
                 <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200">
                     <div class="flex space-x-2">
                         <button onclick="switchTeacherTab('upload')" id="teacherTabBtnUpload" class="px-4 py-2 font-semibold text-sm rounded-xl bg-sky-600 text-white shadow">
-                            <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Weekly Submission
+                            <i class="fa-solid fa-cloud-arrow-up mr-2"></i> UPLOADS
                         </button>
                         <button onclick="switchTeacherTab('history')" id="teacherTabBtnHistory" class="px-4 py-2 font-semibold text-sm rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">
                             <i class="fa-solid fa-clock-rotate-left mr-2"></i> History
+                        </button>
+                        <button onclick="switchTeacherTab('calendar')" id="teacherTabBtnCalendar" class="px-4 py-2 font-semibold text-sm rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">
+                            <i class="fa-solid fa-calendar-days mr-2"></i> Submission Calendar
                         </button>
                         <button onclick="switchTeacherTab('rubrics')" id="teacherTabBtnRubrics" class="px-4 py-2 font-semibold text-sm rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">
                             <i class="fa-solid fa-clipboard-check mr-2"></i> Lesson Plan Rubrics
@@ -299,6 +302,26 @@
                     </div>
                 </div>
 
+                <div id="teacherTabCalendar" class="hidden space-y-5">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                            <div><h3 class="font-bold text-slate-800">Lesson Plan & Reflection Calendar</h3><p class="text-xs text-slate-500">Select any date to open its teaching week in UPLOADS.</p></div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="changeTeacherCalendarMonth(-1)" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"><i class="fa-solid fa-chevron-left"></i></button>
+                                <span id="teacherCalendarMonthLabel" class="min-w-36 text-center text-sm font-bold text-slate-700"></span>
+                                <button type="button" onclick="changeTeacherCalendarMonth(1)" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"><i class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-3 text-xs mb-4">
+                            <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-500"></span> No lesson plan</span>
+                            <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500"></span> Reflection submitted</span>
+                            <span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-sky-100 border border-sky-300"></span> Lesson plan uploaded / reflection pending</span>
+                            <span class="inline-flex items-center gap-1.5"><span class="font-bold text-emerald-700">✓</span> All five reflections completed for the week</span>
+                        </div>
+                        <div id="teacherSubmissionCalendar" class="grid grid-cols-7 gap-1.5"></div>
+                    </div>
+                </div>
+
                 <div id="teacherTabRubrics" class="hidden space-y-5">
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
@@ -364,8 +387,11 @@
             <div id="adminDashboard" class="space-y-6 hidden">
 
                 <div class="flex space-x-2 border-b border-slate-200 pb-2 overflow-x-auto">
-                    <button onclick="switchAdminTab('overview')" id="tabBtnOverview" class="px-4 py-2 font-semibold text-sm rounded-xl bg-sky-600 text-white shadow">
-                        <i class="fa-solid fa-chart-pie mr-2"></i> Dashboard & Records
+                    <button onclick="switchAdminTab('dashboard')" id="tabBtnDashboard" class="px-4 py-2 font-semibold text-sm rounded-xl bg-sky-600 text-white shadow">
+                        <i class="fa-solid fa-chart-line mr-2"></i> DASHBOARD
+                    </button>
+                    <button onclick="switchAdminTab('uploads')" id="tabBtnUploads" class="px-4 py-2 font-semibold text-sm rounded-xl bg-white text-slate-600 hover:bg-slate-100">
+                        <i class="fa-solid fa-cloud-arrow-up mr-2"></i> UPLOADS
                     </button>
                     <button onclick="switchAdminTab('teachers')" id="tabBtnTeachers" class="px-4 py-2 font-semibold text-sm rounded-xl bg-white text-slate-600 hover:bg-slate-100">
                         <i class="fa-solid fa-users mr-2"></i> Teacher Roster Management
@@ -437,39 +463,51 @@
                     </div>
                 </div>
 
-                <div id="adminTabOverview" class="space-y-6">
+                <div id="adminTabDashboard" class="space-y-6">
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                            <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-xl flex items-center justify-center text-xl font-bold">
-                                <i class="fa-solid fa-users"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs text-slate-500 font-semibold uppercase">Total Enrolled Teachers</p>
-                                <h3 id="statTotalTeachers" class="text-2xl font-bold text-slate-800">0</h3>
-                            </div>
+                            <div class="w-12 h-12 bg-sky-100 text-sky-600 rounded-xl flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-users"></i></div>
+                            <div><p class="text-xs text-slate-500 font-semibold uppercase">Total Enrolled Teachers</p><h3 id="statTotalTeachers" class="text-2xl font-bold text-slate-800">0</h3></div>
                         </div>
-
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-xl font-bold">
-                                <i class="fa-solid fa-file-circle-check"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs text-slate-500 font-semibold uppercase">Successful Lesson Plan Uploads</p>
-                                <h3 id="statSuccessfulLp" class="text-2xl font-bold text-emerald-600">0 / 0</h3>
-                            </div>
+                            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-file-circle-check"></i></div>
+                            <div><p class="text-xs text-slate-500 font-semibold uppercase">Successful Lesson Plan Uploads</p><h3 id="statSuccessfulLp" class="text-2xl font-bold text-emerald-600">0 / 0</h3></div>
                         </div>
-
                         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                            <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-xl font-bold">
-                                <i class="fa-solid fa-book-open-reader"></i>
+                            <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-xl font-bold"><i class="fa-solid fa-book-open-reader"></i></div>
+                            <div><p class="text-xs text-slate-500 font-semibold uppercase">Successful Reflections Submitted</p><h3 id="statSuccessfulRef" class="text-2xl font-bold text-purple-600">0 / 0</h3></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+                            <div><h3 class="font-bold text-slate-800">School-wide Submission Overview</h3><p class="text-xs text-slate-500">Teachers who submitted a lesson plan for the selected teaching week</p></div>
+                            <select id="adminAnalyticsWeek" onchange="changeAdminAnalyticsWeek(this.value)" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"></select>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                            <div class="border border-slate-100 rounded-xl p-4">
+                                <h4 class="text-sm font-bold text-slate-700 mb-3">Teachers with / without Lesson Plan</h4>
+                                <div id="adminSubmissionPie" class="min-h-[230px] flex items-center justify-center"></div>
                             </div>
-                            <div>
-                                <p class="text-xs text-slate-500 font-semibold uppercase">Successful Reflections Submitted</p>
-                                <h3 id="statSuccessfulRef" class="text-2xl font-bold text-purple-600">0 / 0</h3>
+                            <div class="border border-slate-100 rounded-xl p-4">
+                                <h4 class="text-sm font-bold text-slate-700 mb-3">Submission Summary</h4>
+                                <div id="adminSubmissionSummary" class="space-y-3"></div>
                             </div>
                         </div>
                     </div>
 
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+                            <div><h3 class="font-bold text-slate-800">Individual Teacher Analytics</h3><p class="text-xs text-slate-500">Lesson plans, reflections per lesson plan, and weeks with or without uploads</p></div>
+                            <select id="adminAnalyticsTeacher" onchange="renderAdminTeacherAnalytics()" class="w-full md:w-80 px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white"><option value="">Select a teacher</option></select>
+                        </div>
+                        <div id="adminTeacherAnalytics" class="space-y-5">
+                            <p class="text-sm text-slate-400 text-center py-10">Select a teacher to view their submission history.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="adminTabUploads" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                         <div class="p-5 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                             <div>
@@ -727,6 +765,8 @@
             "Ways forward and described interventions are actionable, providing ways to extend or adjust learning based on reflections."
         ];
         let selectedTeacherWeekKey = null;
+        let teacherCalendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        let teacherHistoricalView = false;
         let selectedReflectionPlanId = '';
         let activeRubricRecord = null;
         let activeRubricUid = null;
@@ -809,8 +849,11 @@
             if (!select) return;
             const currentKey = getWeekStorageKey();
             const allowed = getAllowedTeacherWeekKeys();
-            if (!selectedTeacherWeekKey || !allowed.includes(selectedTeacherWeekKey)) selectedTeacherWeekKey = currentKey;
+            if (!selectedTeacherWeekKey || (!allowed.includes(selectedTeacherWeekKey) && !teacherHistoricalView)) selectedTeacherWeekKey = currentKey;
             select.innerHTML = '';
+            if (teacherHistoricalView && selectedTeacherWeekKey && !allowed.includes(selectedTeacherWeekKey)) {
+                select.add(new Option(`${getWeekDisplayLabel(selectedTeacherWeekKey)} — Historical View Only`, selectedTeacherWeekKey));
+            }
             allowed.forEach((weekKey, index) => {
                 const offset = index - 4;
                 let label = getWeekDisplayLabel(weekKey);
@@ -828,18 +871,20 @@
             if (!note) return;
             const selected = getTeacherWeekKey();
             const current = getWeekStorageKey();
-            if (selected < current) note.textContent = `You are submitting for a previous teaching week (${getWeekDisplayLabel(selected)}). This will be recorded as a late submission.`;
+            if (teacherHistoricalView) note.textContent = `Historical view only: ${getWeekDisplayLabel(selected)}. Uploading and editing are disabled for past weeks.`;
+            else if (selected < current) note.textContent = `You are submitting for a previous teaching week (${getWeekDisplayLabel(selected)}). This will be recorded as a late submission.`;
             else if (selected > current) note.textContent = `You are submitting one week ahead (${getWeekDisplayLabel(selected)}). This will be recorded as an advance submission.`;
             else note.textContent = `Current teaching week: ${getWeekDisplayLabel(selected)}. Regular submission deadlines apply.`;
         }
 
-        async function changeTeacherWeek(weekKey) {
-            if (!isTeacherWeekAllowed(weekKey)) {
+        async function changeTeacherWeek(weekKey, allowHistoricalView = false) {
+            if (!isTeacherWeekAllowed(weekKey) && !allowHistoricalView) {
                 showToast('You can select only the previous four weeks, current week, or next week.', 'error');
                 populateTeacherWeekSelector();
                 return;
             }
             selectedTeacherWeekKey = weekKey;
+            teacherHistoricalView = !isTeacherWeekAllowed(weekKey);
             updateTeacherWeekNote();
             renderTeacherDashboard();
             const rubricTab = document.getElementById('teacherTabRubrics');
@@ -983,8 +1028,11 @@
 
                 if (data.role === "admin") {
                     await loadAdminData();
+                    switchAdminTab('dashboard');
                 } else {
                     selectedTeacherWeekKey = getWeekStorageKey();
+                    teacherHistoricalView = false;
+                    teacherCalendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
                     await loadTeacherData(user.uid);
                     await promptForMissingLessonPlanTitles(user.uid);
                 }
@@ -1074,7 +1122,7 @@
         }
 
         function switchTeacherTab(tab) {
-            const tabs = ['upload', 'history', 'rubrics'];
+            const tabs = ['upload', 'history', 'calendar', 'rubrics'];
             tabs.forEach(name => {
                 const button = document.getElementById(`teacherTabBtn${name.charAt(0).toUpperCase()}${name.slice(1)}`);
                 const section = name === 'upload' ? document.getElementById('teacherTabUpload') : document.getElementById(`teacherTab${name.charAt(0).toUpperCase()}${name.slice(1)}`);
@@ -1084,6 +1132,7 @@
                 }
             });
             if (tab === 'history') renderTeacherHistoryTable();
+            if (tab === 'calendar') renderTeacherSubmissionCalendar();
             if (tab === 'rubrics') loadTeacherRubric();
         }
 
@@ -1170,6 +1219,105 @@
             return {};
         }
 
+        function changeTeacherCalendarMonth(delta) {
+            teacherCalendarMonth = new Date(teacherCalendarMonth.getFullYear(), teacherCalendarMonth.getMonth() + delta, 1);
+            renderTeacherSubmissionCalendar();
+        }
+
+        function openTeacherCalendarWeek(dateText) {
+            const selectedDate = new Date(`${dateText}T12:00:00`);
+            if (isNaN(selectedDate.getTime())) return;
+            const weekKey = getWeekStorageKey(selectedDate);
+            switchTeacherTab('upload');
+            changeTeacherWeek(weekKey, true);
+            const wrap = document.getElementById('teacherWeekSelectorWrap');
+            if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function renderTeacherSubmissionCalendar() {
+            if (!currentUser || currentUser.role !== 'teacher') return;
+            const container = document.getElementById('teacherSubmissionCalendar');
+            const label = document.getElementById('teacherCalendarMonthLabel');
+            if (!container || !label) return;
+
+            const year = teacherCalendarMonth.getFullYear();
+            const month = teacherCalendarMonth.getMonth();
+            label.textContent = teacherCalendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            container.innerHTML = '';
+            ['MON','TUE','WED','THU','FRI','SAT','SUN'].forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'text-center text-[10px] font-bold text-slate-400 py-2';
+                header.textContent = day;
+                container.appendChild(header);
+            });
+
+            const first = new Date(year, month, 1, 12);
+            const offset = (first.getDay() + 6) % 7;
+            const start = new Date(year, month, 1 - offset, 12);
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+
+            for (let index = 0; index < 42; index++) {
+                const date = new Date(start);
+                date.setDate(start.getDate() + index);
+                const dateText = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+                const inMonth = date.getMonth() === month;
+                const weekKey = getWeekStorageKey(date);
+                const record = teacherHistoryRecords.find(r => r.uid === currentUser.uid && r.weekKey === weekKey);
+                const plans = record ? getRecordPlansForWeek(record, weekKey) : [];
+                const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][date.getDay()];
+                let reflectionExists = false;
+                if (record && plans.length && ['Monday','Tuesday','Wednesday','Thursday','Friday'].includes(dayName)) {
+                    reflectionExists = plans.some(plan => {
+                        const reflections = getPlanReflections(record, plan.id);
+                        const item = reflections[dayName];
+                        return !!(item && item.text && (!item.timestamp || timestampBelongsToWeek(item.timestamp, weekKey)));
+                    });
+                    if (!reflectionExists && record.reflections && record.reflections[dayName]) {
+                        const legacyItem = record.reflections[dayName];
+                        reflectionExists = !!(legacyItem && legacyItem.text && (!legacyItem.timestamp || timestampBelongsToWeek(legacyItem.timestamp, weekKey)));
+                    }
+                }
+                if (record && !plans.length && record.reflections && record.reflections[dayName]) {
+                    const item = record.reflections[dayName];
+                    reflectionExists = !!(item && item.text);
+                }
+                const weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+                const completedDays = record && plans.length ? weekdays.filter(day => plans.some(plan => {
+                    const item = getPlanReflections(record, plan.id)[day];
+                    return item && item.text && (!item.timestamp || timestampBelongsToWeek(item.timestamp, weekKey));
+                })).length : 0;
+                const weekComplete = plans.length > 0 && completedDays === 5;
+                const isWeekday = date.getDay() >= 1 && date.getDay() <= 5;
+                let stateClass = 'bg-slate-50 border-slate-100 text-slate-400';
+                let status = '';
+                if (date <= today && isWeekday) {
+                    if (!plans.length) {
+                        stateClass = 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100';
+                        status = 'No LP';
+                    } else if (reflectionExists) {
+                        stateClass = 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100';
+                        status = weekComplete ? '✓ Complete' : '✓ Reflection';
+                    } else {
+                        stateClass = 'bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100';
+                        status = 'LP uploaded';
+                    }
+                } else if (date <= today && !isWeekday) {
+                    stateClass = 'bg-slate-50 border-slate-100 text-slate-400';
+                } else {
+                    stateClass = 'bg-slate-50 border-slate-100 text-slate-300';
+                }
+
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `min-h-[76px] p-1.5 border rounded-lg flex flex-col items-center justify-center gap-1 transition ${stateClass} ${inMonth ? '' : 'opacity-40'}`;
+                button.title = `${dateText} · ${getWeekDisplayLabel(weekKey)} · ${status || 'Future / weekend'}. Click to open this teaching week.`;
+                button.innerHTML = `<span class="text-sm font-bold">${date.getDate()}</span><span class="text-[9px] leading-tight text-center">${status}</span>`;
+                button.onclick = () => openTeacherCalendarWeek(dateText);
+                container.appendChild(button);
+            }
+        }
+
         function renderTeacherDashboard() {
             if (!currentUser || currentUser.role !== 'teacher') return;
             populateTeacherWeekSelector();
@@ -1180,6 +1328,10 @@
             lpPill.innerText = plans.length ? `${plans.length} UPLOADED` : 'NO UPLOADS';
             lpPill.className = plans.length ? 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800' : 'px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600';
             planList.innerHTML = plans.length ? plans.map(plan => `<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-lg border border-slate-200 bg-slate-50"><div class="min-w-0"><div class="font-semibold text-sm text-slate-800">${escapeHtml(plan.title || 'NO TITLE')}</div><div class="text-xs text-slate-500">${escapeHtml(plan.fileName || '')} · ${plan.timestamp ? new Date(plan.timestamp).toLocaleString() : ''}</div><div class="text-xs ${plan.adminReviewed ? 'text-emerald-700' : 'text-amber-700'}">${plan.adminReviewed ? 'Reviewed' : 'Pending review'}</div></div><a href="${escapeHtml(plan.fileUrl || '#')}" target="_blank" class="shrink-0 text-xs font-semibold text-sky-700 underline">View file</a></div>`).join('') : '<p class="text-xs text-slate-400">No lesson plans uploaded for this teaching week.</p>';
+            const lpControls = document.querySelectorAll('#lpUploadContainer input, #lpUploadContainer button');
+            lpControls.forEach(control => { control.disabled = teacherHistoricalView; });
+            document.getElementById('lpUploadContainer').classList.toggle('opacity-50', teacherHistoricalView);
+            document.getElementById('lpUploadContainer').classList.toggle('pointer-events-none', teacherHistoricalView);
 
             const refCard = document.getElementById('reflectionCard');
             const refPill = document.getElementById('refTeacherStatusPill');
@@ -1191,6 +1343,8 @@
             const refSavedSummary = document.getElementById('refSavedSummary');
             const refDaysBadges = document.getElementById('refDaysBadges');
             const refExcelLink = document.getElementById('refExcelLink');
+            refUploadContainer.classList.toggle('opacity-50', teacherHistoricalView);
+            refUploadContainer.classList.toggle('pointer-events-none', teacherHistoricalView);
 
             if (!plans.length) {
                 refCard.classList.add('opacity-60');
@@ -1235,6 +1389,12 @@
             } else refSavedSummary.classList.add('hidden');
             refExcelLink.classList.add('hidden');
             onReflectionDayChange();
+            if (teacherHistoricalView) {
+                planSelect.disabled = true;
+                refDaySelect.disabled = true;
+                refTextInput.disabled = true;
+                submitRefBtn.disabled = true;
+            }
         }
 
         function onReflectionLessonPlanChange() {
@@ -1576,6 +1736,8 @@
             populateAdminTeacherDropdown();
             populateAdminWeekSelector();
             applyAdminFilters(false);
+            populateAdminAnalyticsTeacher();
+            renderAdminDashboard();
             renderRosterTable();
             renderAdminSlaTable();
         }
@@ -1645,6 +1807,28 @@
             });
             if (!weeks.includes(selectedAdminWeekKey)) selectedAdminWeekKey = currentKey;
             select.value = selectedAdminWeekKey;
+            const analyticsWeek = document.getElementById('adminAnalyticsWeek');
+            if (analyticsWeek) {
+                analyticsWeek.innerHTML = '';
+                Array.from(select.options).forEach(option => analyticsWeek.add(new Option(option.textContent, option.value)));
+                analyticsWeek.value = selectedAdminWeekKey;
+            }
+        }
+
+        function populateAdminAnalyticsTeacher() {
+            const select = document.getElementById('adminAnalyticsTeacher');
+            if (!select) return;
+            const previous = select.value;
+            select.innerHTML = '<option value="">Select a teacher</option>';
+            teachers.forEach(teacher => select.add(new Option(`${teacher.name} (${teacher.subject})`, teacher.id)));
+            select.value = teachers.some(t => t.id === previous) ? previous : '';
+        }
+
+        function changeAdminAnalyticsWeek(weekKey) {
+            selectedAdminWeekKey = weekKey || getWeekStorageKey();
+            const uploadWeek = document.getElementById('adminDateFilter');
+            if (uploadWeek) uploadWeek.value = selectedAdminWeekKey;
+            applyAdminFilters(true);
         }
 
         function applyAdminFilters(resetPage = true) {
@@ -1682,6 +1866,7 @@
             filteredAdminRecords.sort((a, b) => String(a.teacherName || '').localeCompare(String(b.teacherName || '')));
             if (resetPage) adminPage = 1;
             renderAdminDashboard();
+            renderAdminUploads();
         }
 
         function clearAdminFilters() {
@@ -1694,52 +1879,197 @@
         function changeAdminPage(delta) {
             const totalPages = Math.max(1, Math.ceil(filteredAdminRecords.length / PAGE_SIZE));
             adminPage = Math.min(totalPages, Math.max(1, adminPage + delta));
-            renderAdminDashboard();
+            renderAdminUploads();
         }
 
         function switchAdminTab(tab) {
-            ['Overview', 'Teachers', 'Performance', 'Rubrics'].forEach(t => {
-                const btn = document.getElementById(`tabBtn${t}`);
-                const section = document.getElementById(`adminTab${t}`);
-                if (t.toLowerCase() === tab.toLowerCase()) {
-                    btn.className = "px-4 py-2 font-semibold text-sm rounded-xl bg-sky-600 text-white shadow";
-                    section.classList.remove('hidden');
-                } else {
-                    btn.className = "px-4 py-2 font-semibold text-sm rounded-xl bg-white text-slate-600 hover:bg-slate-100";
-                    section.classList.add('hidden');
+            const tabs = ['Dashboard', 'Uploads', 'Teachers', 'Performance', 'Rubrics'];
+            tabs.forEach(name => {
+                const key = name.toLowerCase();
+                const btn = document.getElementById(`tabBtn${name}`);
+                const section = document.getElementById(`adminTab${name}`);
+                if (btn && section) {
+                    const active = key === tab;
+                    btn.className = active
+                        ? "px-4 py-2 font-semibold text-sm rounded-xl bg-sky-600 text-white shadow"
+                        : "px-4 py-2 font-semibold text-sm rounded-xl bg-white text-slate-600 hover:bg-slate-100";
+                    section.classList.toggle('hidden', !active);
                 }
             });
-            if (tab === 'overview') renderAdminDashboard();
+            if (tab === 'dashboard') renderAdminDashboard();
+            if (tab === 'uploads') renderAdminUploads();
             if (tab === 'teachers') renderRosterTable();
             if (tab === 'performance') renderAdminSlaTable();
             if (tab === 'rubrics') initializeAdminRubricFilters();
         }
 
-        function renderAdminDashboard() {
-            const currentWeekKey = selectedAdminWeekKey || getWeekStorageKey();
-            const currentWeekRecords = allSubmissionRecords.filter(r => r.weekKey === currentWeekKey);
-            const totalTeachersCount = teachers.length;
-            const plansForSelectedWeek = record => getTeacherLessonPlans(record).filter(plan =>
-                plan.timestamp ? timestampBelongsToWeek(plan.timestamp, currentWeekKey) : record.weekKey === currentWeekKey
+        function getRecordPlansForWeek(record, weekKey) {
+            return getTeacherLessonPlans(record).filter(plan =>
+                plan.timestamp ? timestampBelongsToWeek(plan.timestamp, weekKey) : record.weekKey === weekKey
             );
-            const successfulLpCount = currentWeekRecords.reduce((sum, record) => sum + plansForSelectedWeek(record).length, 0);
-            const lessonPlanDenominator = Math.max(totalTeachersCount, successfulLpCount);
-            const totalUploadedLessonPlans = successfulLpCount;
-            const successfulRefCount = currentWeekRecords.reduce((sum, record) => {
-                return sum + plansForSelectedWeek(record).filter(plan => {
-                    const planReflections = getPlanReflections(record, plan.id);
-                    return Object.keys(planReflections).some(day => {
-                        const item = planReflections[day];
-                        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(day) &&
-                            item && item.text && (!item.timestamp || timestampBelongsToWeek(item.timestamp, currentWeekKey));
-                    });
-                }).length;
-            }, 0);
+        }
 
-            document.getElementById('statTotalTeachers').innerText = totalTeachersCount;
-            document.getElementById('statSuccessfulLp').innerText = `${successfulLpCount} / ${lessonPlanDenominator}`;
-            document.getElementById('statSuccessfulRef').innerText = `${successfulRefCount} / ${totalUploadedLessonPlans}`;
+        function getReflectionEntriesForPlan(record, plan, weekKey) {
+            const reflections = getPlanReflections(record, plan.id);
+            return Object.entries(reflections).filter(([day, item]) =>
+                ['Monday','Tuesday','Wednesday','Thursday','Friday'].includes(day) &&
+                item && item.text && (!item.timestamp || timestampBelongsToWeek(item.timestamp, weekKey))
+            );
+        }
 
+        function getWeekKeysForAnalytics(uid = null) {
+            const relevant = allSubmissionRecords.filter(r => !uid || r.uid === uid);
+            const keys = relevant.map(r => r.weekKey).filter(Boolean).sort();
+            const current = getWeekStorageKey();
+            if (!keys.length) return [current];
+            const first = getWeekDateFromKey(keys[0]);
+            const last = getWeekDateFromKey(keys[keys.length - 1]);
+            const currentDate = getWeekDateFromKey(current);
+            const end = currentDate > last ? currentDate : last;
+            const result = [];
+            const cursor = new Date(first);
+            while (cursor <= end) {
+                result.push(getWeekStorageKey(cursor));
+                cursor.setDate(cursor.getDate() + 7);
+            }
+            return result.slice(-24);
+        }
+
+        function renderAdminDashboard() {
+            const weekKey = selectedAdminWeekKey || getWeekStorageKey();
+            const weekRecords = allSubmissionRecords.filter(r => r.weekKey === weekKey);
+            const submittedTeacherIds = new Set();
+            let lpCount = 0;
+            let lpWithReflection = 0;
+            let reflectionCount = 0;
+
+            weekRecords.forEach(record => {
+                const plans = getRecordPlansForWeek(record, weekKey);
+                if (plans.length) submittedTeacherIds.add(record.uid);
+                lpCount += plans.length;
+                plans.forEach(plan => {
+                    const reflections = getReflectionEntriesForPlan(record, plan, weekKey);
+                    reflectionCount += reflections.length;
+                    if (reflections.length) lpWithReflection++;
+                });
+            });
+
+            const enrolled = teachers.length;
+            const submitted = Math.min(enrolled, submittedTeacherIds.size);
+            const notSubmitted = Math.max(0, enrolled - submitted);
+            document.getElementById('statTotalTeachers').innerText = enrolled;
+            document.getElementById('statSuccessfulLp').innerText = `${lpCount} / ${Math.max(enrolled, lpCount)}`;
+            document.getElementById('statSuccessfulRef').innerText = `${lpWithReflection} / ${lpCount}`;
+
+            const weekSelect = document.getElementById('adminAnalyticsWeek');
+            if (weekSelect) weekSelect.value = weekKey;
+
+            const pie = document.getElementById('adminSubmissionPie');
+            if (pie) {
+                const total = Math.max(enrolled, 1);
+                const pct = submitted / total * 100;
+                const circumference = 2 * Math.PI * 76;
+                const dash = circumference * submitted / total;
+                const gap = circumference - dash;
+                pie.innerHTML = `
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+                        <svg viewBox="0 0 220 220" class="w-52 h-52" role="img" aria-label="${submitted} teachers submitted and ${notSubmitted} did not submit">
+                            <circle cx="110" cy="110" r="76" fill="none" stroke="#fee2e2" stroke-width="32"></circle>
+                            <circle cx="110" cy="110" r="76" fill="none" stroke="#10b981" stroke-width="32"
+                                stroke-dasharray="${dash} ${gap}" transform="rotate(-90 110 110)" stroke-linecap="butt"></circle>
+                            <text x="110" y="104" text-anchor="middle" class="fill-slate-800" font-size="31" font-weight="700">${submitted}</text>
+                            <text x="110" y="127" text-anchor="middle" class="fill-slate-500" font-size="11">of ${enrolled} teachers</text>
+                        </svg>
+                        <div class="space-y-3 text-sm min-w-40">
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-emerald-500"></span><span class="text-slate-600">Submitted</span><strong class="ml-auto">${submitted}</strong></div>
+                            <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-rose-200"></span><span class="text-slate-600">No upload</span><strong class="ml-auto">${notSubmitted}</strong></div>
+                            <div class="pt-2 border-t border-slate-100 text-slate-500 text-xs">${pct.toFixed(1)}% submission rate</div>
+                        </div>
+                    </div>`;
+            }
+
+            const summary = document.getElementById('adminSubmissionSummary');
+            if (summary) {
+                summary.innerHTML = `
+                    <div class="flex justify-between items-center p-3 rounded-lg bg-slate-50"><span class="text-sm text-slate-600">Lesson plans uploaded</span><strong class="text-lg text-sky-700">${lpCount}</strong></div>
+                    <div class="flex justify-between items-center p-3 rounded-lg bg-slate-50"><span class="text-sm text-slate-600">Teachers who submitted</span><strong class="text-lg text-emerald-700">${submitted} / ${enrolled}</strong></div>
+                    <div class="flex justify-between items-center p-3 rounded-lg bg-slate-50"><span class="text-sm text-slate-600">Lesson plans with reflection</span><strong class="text-lg text-purple-700">${lpWithReflection} / ${lpCount}</strong></div>
+                    <div class="flex justify-between items-center p-3 rounded-lg bg-slate-50"><span class="text-sm text-slate-600">Reflection entries</span><strong class="text-lg text-purple-700">${reflectionCount}</strong></div>`;
+            }
+
+            populateAdminAnalyticsTeacher();
+            renderAdminTeacherAnalytics();
+        }
+
+        function renderAdminTeacherAnalytics() {
+            const container = document.getElementById('adminTeacherAnalytics');
+            const select = document.getElementById('adminAnalyticsTeacher');
+            if (!container || !select) return;
+            const uid = select.value;
+            if (!uid) {
+                container.innerHTML = '<p class="text-sm text-slate-400 text-center py-10">Select a teacher to view their submission history.</p>';
+                return;
+            }
+            const teacher = teachers.find(t => t.id === uid);
+            const weekKeys = getWeekKeysForAnalytics(uid);
+            const records = allSubmissionRecords.filter(r => r.uid === uid);
+            const data = weekKeys.map(key => {
+                const record = records.find(r => r.weekKey === key);
+                const plans = record ? getRecordPlansForWeek(record, key) : [];
+                const refs = plans.reduce((sum, plan) => sum + getReflectionEntriesForPlan(record, plan, key).length, 0);
+                return { key, label: getWeekDisplayLabel(key), plans: plans.length, reflections: refs, averageReflections: plans.length ? refs / plans.length : 0 };
+            });
+            const maxValue = Math.max(1, ...data.map(d => Math.max(d.plans, d.reflections)));
+            const width = Math.max(650, data.length * 58);
+            const chartHeight = 250;
+            const barArea = 180;
+            const groupWidth = width / Math.max(data.length, 1);
+            const bars = data.map((d, index) => {
+                const x = index * groupWidth + groupWidth * 0.2;
+                const barW = Math.min(17, groupWidth * 0.28);
+                const lpH = d.plans / maxValue * barArea;
+                const refH = d.reflections / maxValue * barArea;
+                return `<rect x="${x}" y="${chartHeight - 38 - lpH}" width="${barW}" height="${lpH}" rx="3" fill="#0284c7"><title>${escapeHtml(d.label)}: ${d.plans} lesson plan(s)</title></rect>
+                    <rect x="${x + barW + 3}" y="${chartHeight - 38 - refH}" width="${barW}" height="${refH}" rx="3" fill="#a855f7"><title>${escapeHtml(d.label)}: ${d.reflections} reflection entry/entries</title></rect>
+                    <text x="${x + barW}" y="${chartHeight - 17}" text-anchor="middle" font-size="9" fill="#64748b">${escapeHtml(d.key.slice(5))}</text>`;
+            }).join('');
+            const groupedWeeks = new Map();
+            data.slice().reverse().forEach(d => {
+                const monthLabel = getWeekDateFromKey(d.key).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                if (!groupedWeeks.has(monthLabel)) groupedWeeks.set(monthLabel, []);
+                groupedWeeks.get(monthLabel).push(d);
+            });
+            const weeksHtml = Array.from(groupedWeeks.entries()).map(([monthLabel, monthWeeks]) => `
+                <div class="pt-3 first:pt-0">
+                    <h5 class="text-xs font-bold uppercase tracking-wide text-slate-500 mb-1">${escapeHtml(monthLabel)}</h5>
+                    ${monthWeeks.map(d => `
+                        <div class="flex flex-wrap items-center justify-between gap-2 py-2 border-b border-slate-100 text-xs">
+                            <span class="text-slate-600">${escapeHtml(d.label)}</span>
+                            <span class="font-semibold ${d.plans ? 'text-emerald-700' : 'text-rose-600'}">${d.plans ? `${d.plans} LP upload${d.plans === 1 ? '' : 's'}` : 'NO LP UPLOAD'}</span>
+                            <span class="text-purple-700">${d.reflections} reflection${d.reflections === 1 ? '' : 's'} · ${d.averageReflections.toFixed(1)} / LP</span>
+                        </div>`).join('')}
+                </div>`).join('');
+            const totalPlans = data.reduce((sum, d) => sum + d.plans, 0);
+            const totalRefs = data.reduce((sum, d) => sum + d.reflections, 0);
+            container.innerHTML = `
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="p-3 rounded-xl bg-sky-50"><p class="text-xs text-sky-700">Total lesson plans</p><p class="text-2xl font-bold text-sky-800">${totalPlans}</p></div>
+                    <div class="p-3 rounded-xl bg-purple-50"><p class="text-xs text-purple-700">Total reflections</p><p class="text-2xl font-bold text-purple-800">${totalRefs}</p></div>
+                    <div class="p-3 rounded-xl bg-rose-50"><p class="text-xs text-rose-700">Weeks without upload</p><p class="text-2xl font-bold text-rose-800">${data.filter(d => !d.plans).length}</p></div>
+                </div>
+                <div class="border border-slate-100 rounded-xl p-4">
+                    <div class="flex flex-wrap gap-4 text-xs mb-3"><span class="text-sky-700 font-semibold">■ Lesson plans per week</span><span class="text-purple-700 font-semibold">■ Reflection entries per week</span></div>
+                    <div class="overflow-x-auto"><svg viewBox="0 0 ${width} ${chartHeight}" style="min-width:${width}px;width:100%;height:auto" role="img" aria-label="Weekly lesson plan and reflection counts">${Array.from({length:maxValue+1},(_,n)=>{const y=chartHeight-38-(n/maxValue*barArea);return `<line x1="0" y1="${y}" x2="${width}" y2="${y}" stroke="#e2e8f0" stroke-dasharray="3 4"/><text x="3" y="${y-3}" font-size="9" fill="#94a3b8">${n}</text>`}).join('')}${bars}</svg></div>
+                </div>
+                <div class="border border-slate-100 rounded-xl p-4">
+                    <h4 class="font-bold text-sm text-slate-700 mb-2">Monthly / Weekly Upload Record</h4>
+                    <p class="text-xs text-slate-500 mb-2">${escapeHtml(teacher ? teacher.name : '')} · Blue = upload recorded; red = no lesson plan uploaded</p>
+                    <div class="max-h-80 overflow-y-auto">${weeksHtml || '<p class="text-xs text-slate-400">No weekly records available.</p>'}</div>
+                </div>`;
+        }
+
+        function renderAdminUploads() {
+            const currentWeekKey = selectedAdminWeekKey || getWeekStorageKey();
             const tableBody = document.getElementById('masterTableBody');
             if (!tableBody) return;
             tableBody.innerHTML = '';
