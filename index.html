@@ -480,7 +480,7 @@
                                 <select id="adminTeacherFilter" onchange="applyAdminFilters()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-sky-500 outline-none bg-white">
                                     <option value="">All Teachers</option>
                                 </select>
-                                <input type="date" id="adminDateFilter" onchange="applyAdminFilters()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-sky-500 outline-none">
+                                <select id="adminDateFilter" onchange="applyAdminFilters()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-sky-500 outline-none bg-white" aria-label="Select submission week"></select>
                                 <button onclick="refreshData()" class="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs rounded-lg font-medium">
                                     <i class="fa-solid fa-rotate mr-1"></i> Refresh
                                 </button>
@@ -785,9 +785,8 @@
             if (isNaN(monday.getTime())) return String(weekKey || '');
             const day = monday.getDate();
             const weekNumber = Math.ceil(day / 7);
-            const ordinal = ({1:'st', 2:'nd', 3:'rd'}[weekNumber] || 'th');
             const month = monday.toLocaleDateString('en-US', { month: 'long' }).toUpperCase();
-            return `${weekNumber}${ordinal} Week of ${month} ${monday.getFullYear()}`;
+            return `${month} (Week ${weekNumber}) ${monday.getFullYear()}`;
         }
 
         function getAllowedTeacherWeekKeys() {
@@ -1575,6 +1574,7 @@
             });
 
             populateAdminTeacherDropdown();
+            populateAdminWeekSelector();
             applyAdminFilters(false);
             renderRosterTable();
             renderAdminSlaTable();
@@ -1600,32 +1600,94 @@
             selectEl.value = previousVal;
         }
 
+        let selectedAdminWeekKey = null;
+
+        function getTimestampDate(value) {
+            if (!value) return null;
+            const raw = value && typeof value.toDate === 'function' ? value.toDate() : value;
+            const date = raw instanceof Date ? new Date(raw.getTime()) : new Date(raw);
+            return isNaN(date.getTime()) ? null : date;
+        }
+
+        function getWeekBounds(weekKey) {
+            const start = getWeekDateFromKey(weekKey);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(start);
+            end.setDate(end.getDate() + 7);
+            return { start, end };
+        }
+
+        function timestampBelongsToWeek(timestamp, weekKey) {
+            const date = getTimestampDate(timestamp);
+            if (!date) return false;
+            return getWeekStorageKey(date) === weekKey;
+        }
+
+        function populateAdminWeekSelector() {
+            const select = document.getElementById('adminDateFilter');
+            if (!select) return;
+            const currentKey = getWeekStorageKey();
+            if (!selectedAdminWeekKey) selectedAdminWeekKey = currentKey;
+            const currentMonday = getWeekDateFromKey(currentKey);
+            const weeks = [];
+            for (let offset = -16; offset <= 2; offset++) {
+                const monday = new Date(currentMonday);
+                monday.setDate(monday.getDate() + offset * 7);
+                weeks.push(getWeekStorageKey(monday));
+            }
+            select.innerHTML = '';
+            weeks.reverse().forEach(key => {
+                const option = new Option(
+                    key === currentKey ? `${getWeekDisplayLabel(key)} — Current Week` : getWeekDisplayLabel(key),
+                    key
+                );
+                select.add(option);
+            });
+            if (!weeks.includes(selectedAdminWeekKey)) selectedAdminWeekKey = currentKey;
+            select.value = selectedAdminWeekKey;
+        }
+
         function applyAdminFilters(resetPage = true) {
             const selectedTeacherId = document.getElementById('adminTeacherFilter').value;
-            const selectedDate = document.getElementById('adminDateFilter').value;
+            const weekSelect = document.getElementById('adminDateFilter');
+            selectedAdminWeekKey = weekSelect && weekSelect.value ? weekSelect.value : getWeekStorageKey();
+            const weekRecords = allSubmissionRecords.filter(rec => rec.weekKey === selectedAdminWeekKey);
+            const byUid = new Map();
+            weekRecords.forEach(rec => byUid.set(rec.uid, rec));
 
-            filteredAdminRecords = allSubmissionRecords.filter(rec => {
-                if (selectedTeacherId && rec.uid !== selectedTeacherId) return false;
-                if (selectedDate) {
-                    const lpDate = rec.lessonPlan ? getLocalDateString(rec.lessonPlan.timestamp) : "";
-                    const weekMatch = rec.weekKey === selectedDate;
-                    const refDates = rec.reflections
-                        ? Object.values(rec.reflections).map(r => getLocalDateString(r.timestamp))
-                        : [];
-                    if (lpDate !== selectedDate && !weekMatch && !refDates.includes(selectedDate)) {
-                        return false;
-                    }
-                }
-                return true;
+            filteredAdminRecords = [];
+            teachers.forEach(t => {
+                if (selectedTeacherId && t.id !== selectedTeacherId) return;
+                const existing = byUid.get(t.id);
+                filteredAdminRecords.push(existing || {
+                    docId: `${t.id}_${selectedAdminWeekKey}`,
+                    uid: t.id,
+                    teacherName: t.name,
+                    subject: t.subject,
+                    username: t.username,
+                    weekKey: selectedAdminWeekKey,
+                    lessonPlan: null,
+                    lessonPlans: [],
+                    reflections: {},
+                    reflectionExcelUrl: null,
+                    adminReviewed: false,
+                    isPlaceholder: true
+                });
             });
+            if (currentUser && currentUser.role === 'admin' && (!selectedTeacherId || selectedTeacherId === currentUser.uid) && !filteredAdminRecords.some(r => r.uid === currentUser.uid)) {
+                const ownRecord = allSubmissionRecords.find(r => r.uid === currentUser.uid && r.weekKey === selectedAdminWeekKey);
+                if (ownRecord) filteredAdminRecords.push(ownRecord);
+            }
 
+            filteredAdminRecords.sort((a, b) => String(a.teacherName || '').localeCompare(String(b.teacherName || '')));
             if (resetPage) adminPage = 1;
             renderAdminDashboard();
         }
 
         function clearAdminFilters() {
             document.getElementById('adminTeacherFilter').value = "";
-            document.getElementById('adminDateFilter').value = "";
+            selectedAdminWeekKey = getWeekStorageKey();
+            populateAdminWeekSelector();
             applyAdminFilters(true);
         }
 
@@ -1654,17 +1716,23 @@
         }
 
         function renderAdminDashboard() {
-            const currentWeekKey = getWeekStorageKey();
+            const currentWeekKey = selectedAdminWeekKey || getWeekStorageKey();
             const currentWeekRecords = allSubmissionRecords.filter(r => r.weekKey === currentWeekKey);
             const totalTeachersCount = teachers.length;
-            const successfulLpCount = currentWeekRecords.reduce((sum, record) => sum + getTeacherLessonPlans(record).length, 0);
+            const plansForSelectedWeek = record => getTeacherLessonPlans(record).filter(plan =>
+                plan.timestamp ? timestampBelongsToWeek(plan.timestamp, currentWeekKey) : record.weekKey === currentWeekKey
+            );
+            const successfulLpCount = currentWeekRecords.reduce((sum, record) => sum + plansForSelectedWeek(record).length, 0);
             const lessonPlanDenominator = Math.max(totalTeachersCount, successfulLpCount);
-            const totalUploadedLessonPlans = currentWeekRecords.reduce((sum, record) => sum + getTeacherLessonPlans(record).length, 0);
+            const totalUploadedLessonPlans = successfulLpCount;
             const successfulRefCount = currentWeekRecords.reduce((sum, record) => {
-                const plans = getTeacherLessonPlans(record);
-                return sum + plans.filter(plan => {
+                return sum + plansForSelectedWeek(record).filter(plan => {
                     const planReflections = getPlanReflections(record, plan.id);
-                    return Object.keys(planReflections).some(day => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(day) && planReflections[day]);
+                    return Object.keys(planReflections).some(day => {
+                        const item = planReflections[day];
+                        return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(day) &&
+                            item && item.text && (!item.timestamp || timestampBelongsToWeek(item.timestamp, currentWeekKey));
+                    });
                 }).length;
             }, 0);
 
@@ -1682,10 +1750,26 @@
             const pageItems = filteredAdminRecords.slice(startIndex, endIndex);
 
             pageItems.forEach(rec => {
-                const plans = getTeacherLessonPlans(rec);
+                const plans = getTeacherLessonPlans(rec).filter(plan =>
+                    plan.timestamp ? timestampBelongsToWeek(plan.timestamp, currentWeekKey) : rec.weekKey === currentWeekKey
+                );
                 const lp = plans.length ? plans[plans.length - 1] : null;
-                const refs = rec.reflections ? Object.keys(rec.reflections) : [];
-                const reflectionCount = Object.values(rec.reflections || {}).reduce((sum, value) => sum + (value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value).filter(k => ['Monday','Tuesday','Wednesday','Thursday','Friday'].includes(k)).length : 0), 0) || ['Monday','Tuesday','Wednesday','Thursday','Friday'].filter(day => rec.reflections && rec.reflections[day]).length;
+                const visibleReflections = {};
+                plans.forEach(plan => {
+                    const planRefs = getPlanReflections(rec, plan.id);
+                    const kept = {};
+                    Object.entries(planRefs).forEach(([day, item]) => {
+                        if (item && item.text && (!item.timestamp || timestampBelongsToWeek(item.timestamp, currentWeekKey))) kept[day] = item;
+                    });
+                    if (Object.keys(kept).length) visibleReflections[plan.id] = kept;
+                });
+                const legacyRefs = rec.reflections || {};
+                ['Monday','Tuesday','Wednesday','Thursday','Friday'].forEach(day => {
+                    const item = legacyRefs[day];
+                    if (item && item.text && (!item.timestamp || timestampBelongsToWeek(item.timestamp, currentWeekKey))) visibleReflections[day] = item;
+                });
+                const reflectionCount = Object.values(visibleReflections).reduce((sum, value) =>
+                    sum + (value && typeof value === 'object' ? Object.keys(value).filter(k => ['Monday','Tuesday','Wednesday','Thursday','Friday'].includes(k)).length : 0), 0);
                 const displayDate = lp && lp.timestamp ? new Date(lp.timestamp).toLocaleDateString() : getWeekDisplayLabel(rec.weekKey);
                 const isReviewed = rec.adminReviewed || (lp && lp.adminReviewed);
 
@@ -1707,7 +1791,7 @@
                     <td class="p-4">
                         ${reflectionCount > 0
                             ? `<div class="flex flex-wrap items-center gap-1.5">
-                                <button id="adminReflectionBadge_${encodeURIComponent(rec.docId)}" onclick="openReflectionModal('${escapeHtml(rec.docId)}', 'admin')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold">
+                                <button id="adminReflectionBadge_${encodeURIComponent(rec.docId)}" onclick="openReflectionModal('${escapeHtml(rec.docId)}', 'admin', '${escapeHtml(currentWeekKey)}')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold">
                                     View Reflections (${reflectionCount})
                                 </button>
                                 ${rec.reflectionExcelUrl
@@ -1728,9 +1812,9 @@
                               )
                             : `<span class="text-xs text-slate-400">--</span>`
                         }
-                        <button onclick="deleteSubmissionRecord('${escapeHtml(rec.docId)}', '${escapeHtml(rec.uid)}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-semibold transition" title="Delete Submission Record">
+                        ${rec.isPlaceholder ? '' : `<button onclick="deleteSubmissionRecord('${escapeHtml(rec.docId)}', '${escapeHtml(rec.uid)}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-semibold transition" title="Delete Submission Record">
                             <i class="fa-solid fa-trash-can"></i>
-                        </button>
+                        </button>`}
                     </td>
                 `;
                 tableBody.appendChild(tr);
@@ -1958,10 +2042,30 @@
 
         let activeReflectionRecord = null;
 
-        function openReflectionModal(docId, source) {
+        function openReflectionModal(docId, source, weekKey = null) {
             const list = source === 'admin' ? allSubmissionRecords : teacherHistoryRecords;
-            const record = list.find(r => r.docId === docId);
-            if (!record) return;
+            const originalRecord = list.find(r => r.docId === docId);
+            if (!originalRecord) return;
+            let record = originalRecord;
+            if (source === 'admin' && weekKey) {
+                const visiblePlans = getTeacherLessonPlans(originalRecord).filter(plan =>
+                    plan.timestamp ? timestampBelongsToWeek(plan.timestamp, weekKey) : originalRecord.weekKey === weekKey
+                );
+                const visibleReflections = {};
+                visiblePlans.forEach(plan => {
+                    const items = getPlanReflections(originalRecord, plan.id);
+                    const kept = {};
+                    Object.entries(items).forEach(([day, item]) => {
+                        if (item && item.text && (!item.timestamp || timestampBelongsToWeek(item.timestamp, weekKey))) kept[day] = item;
+                    });
+                    if (Object.keys(kept).length) visibleReflections[plan.id] = kept;
+                });
+                ['Monday','Tuesday','Wednesday','Thursday','Friday'].forEach(day => {
+                    const item = (originalRecord.reflections || {})[day];
+                    if (item && item.text && (!item.timestamp || timestampBelongsToWeek(item.timestamp, weekKey))) visibleReflections[day] = item;
+                });
+                record = { ...originalRecord, lessonPlans: visiblePlans, lessonPlan: visiblePlans[visiblePlans.length - 1] || null, reflections: visibleReflections };
+            }
             activeReflectionRecord = record;
             document.getElementById('modalRefTitle').innerText = `${record.teacherName || currentUser.name} - Weekly Reflections`;
             document.getElementById('modalRefSubtitle').innerText = getWeekDisplayLabel(record.weekKey);
